@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Values Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=Instrument+Sans:wght@400;500;600&amp;display=swap">
+<style id="app-css">
+/* Layout: header bar, then a scrolling tree canvas (roots on the left, branching right) beside a details panel. */
+:root {
+  --paper: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #1c2420;
+  --muted: #5b6761;
+  --line: #cfd6d1;
+  --accent: #2d6a4c;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0ece5;
+  --danger: #a3352b;
+  --b1: #2d6a4c; --b2: #3b5f92; --b3: #8a6a12; --b4: #7b4889; --b5: #26787d;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111613; --surface: #1a201c; --ink: #e5ebe7; --muted: #9ba7a0; --line: #343e38;
+    --accent: #79c29a; --accent-ink: #0c1912; --accent-soft: #1f3329; --danger: #f08a7e;
+    --b1: #79c29a; --b2: #8fb0e3; --b3: #d8b75c; --b4: #c79bd4; --b5: #6ccace;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111613; --surface: #1a201c; --ink: #e5ebe7; --muted: #9ba7a0; --line: #343e38;
+  --accent: #79c29a; --accent-ink: #0c1912; --accent-soft: #1f3329; --danger: #f08a7e;
+  --b1: #79c29a; --b2: #8fb0e3; --b3: #d8b75c; --b4: #c79bd4; --b5: #6ccace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  display: flex; flex-direction: column;
+}
+#app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* Header */
+.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+  padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.doc-id { display: flex; flex-direction: column; flex: 1 1 260px; min-width: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.doc-title {
+  font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.2;
+  border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 2px 6px; margin-left: -6px;
+  width: 100%; max-width: 560px;
+}
+.doc-title:hover { border-color: var(--line); }
+.doc-title:focus { border-color: var(--accent); outline: none; background: var(--paper); }
+.tabs { display: flex; gap: 2px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+.tabs button { border: 0; background: transparent; padding: 5px 14px; border-radius: 6px; font-weight: 500; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sep { width: 1px; height: 22px; background: var(--line); }
+.btn, .icon-btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  padding: 6px 12px; font-weight: 500; line-height: 1.3;
+}
+.icon-btn { padding: 6px 9px; min-width: 34px; }
+.btn:hover:not(:disabled), .icon-btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled, .icon-btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:disabled { background: var(--surface); color: var(--muted); border-color: var(--line); opacity: 1; }
+.btn.danger { color: var(--danger); }
+.btn.danger-fill { background: var(--danger); border-color: var(--danger); color: var(--surface); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.save-status { font-size: 13px; color: var(--muted); }
+.save-status.dirty { color: var(--ink); }
+.save-status.dirty::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--b3); margin-right: 6px; vertical-align: 1px; }
+
+/* Banner */
+.banner { display: flex; flex-direction: column; gap: 1px; background: var(--line); }
+.banner-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  padding: 9px 20px; background: var(--accent-soft); font-size: 14px;
+}
+.banner-row p { margin: 0; flex: 1 1 280px; }
+
+/* Work area */
+.work { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 370px; }
+.tree-pane { position: relative; overflow: auto; min-height: 0; }
+.panel { border-left: 1px solid var(--line); background: var(--surface); overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Tree */
+.forest { display: flex; flex-direction: column; align-items: flex-start; gap: 30px; padding: 32px 32px 96px; width: max-content; min-width: 100%; }
+.branch { display: flex; align-items: center; --conn: color-mix(in srgb, var(--hue) 45%, var(--line)); }
+.branch.is-root { --hue: var(--b1); }
+.node-wrap { position: relative; flex: none; }
+.children { display: flex; flex-direction: column; position: relative; padding-left: 52px; }
+.children::before { content: ""; position: absolute; left: 0; top: 50%; width: 26px; border-top: 2px solid var(--conn); }
+.children > .branch { position: relative; padding: 6px 0; }
+.children > .branch::before { content: ""; position: absolute; left: -26px; top: 50%; width: 26px; border-top: 2px solid var(--conn); }
+.children > .branch::after { content: ""; position: absolute; left: -26px; top: 0; bottom: 0; border-left: 2px solid var(--conn); }
+.children > .branch:first-child::after { top: 50%; }
+.children > .branch:last-child::after { bottom: 50%; }
+.children > .branch:only-child::after { display: none; }
+
+.card {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  width: 236px; padding: 9px 12px 11px 13px;
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--hue);
+  border-radius: var(--radius); box-shadow: 0 1px 2px rgb(0 0 0 / .05);
+  transition: box-shadow .15s, transform .15s;
+}
+.card:hover { box-shadow: 0 3px 10px rgb(0 0 0 / .09); }
+.is-root > .node-wrap > .card {
+  width: 260px; padding: 12px 14px 14px 15px;
+  background: color-mix(in srgb, var(--hue) 11%, var(--surface));
+  border-color: color-mix(in srgb, var(--hue) 40%, var(--line));
+  border-left-width: 6px;
+}
+.card.selected { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 4px 14px rgb(0 0 0 / .12); }
+.card.drop { outline: 2px dashed var(--hue); outline-offset: 3px; transform: scale(1.02); }
+.card .kind { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600; color: color-mix(in srgb, var(--hue) 75%, var(--muted)); }
+.card .title { font-weight: 600; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.is-root > .node-wrap > .card .title { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+.card .title.placeholder { color: var(--muted); font-style: italic; font-weight: 500; }
+.card .meaning { font-size: 13px; color: var(--muted); line-height: 1.4; overflow-wrap: anywhere; }
+.card .has-practice { font-size: 12px; color: var(--muted); }
+.card .also { font-size: 12px; font-weight: 500; color: var(--ink); background: color-mix(in srgb, var(--hue) 12%, var(--surface)); border-radius: 6px; padding: 2px 7px; margin-top: 3px; align-self: flex-start; }
+.card.shared { border-style: solid dashed dashed solid; }
+.card.selected-also { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.card.drop-link { outline: 2px dashed var(--accent); outline-offset: 3px; background: var(--accent-soft); }
+.fold {
+  position: absolute; right: -13px; top: 50%; transform: translateY(-50%); z-index: 2;
+  min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px;
+  border: 2px solid var(--conn); background: var(--surface); font-size: 12px; font-weight: 600; line-height: 1;
+  color: var(--ink);
+}
+.add-child {
+  position: absolute; right: 20px; bottom: -11px; z-index: 2;
+  width: 22px; height: 22px; border-radius: 50%; padding: 0; line-height: 1;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600;
+  opacity: 0; transition: opacity .12s;
+}
+.node-wrap:hover .add-child, .card.selected ~ .add-child, .add-child:focus-visible { opacity: 1; }
+.add-root {
+  border: 1.5px dashed var(--line); background: transparent; border-radius: var(--radius);
+  padding: 12px 18px; width: 260px; color: var(--muted); font-weight: 500; text-align: left;
+}
+.add-root:hover { border-color: var(--accent); color: var(--accent); }
+.root-drop {
+  display: none; width: 260px; padding: 16px; border: 2px dashed var(--accent); border-radius: var(--radius);
+  color: var(--accent); font-weight: 500; text-align: center; background: var(--accent-soft);
+}
+body.dragging .root-drop { display: block; }
+body.dragging .add-root { display: none; }
+.root-drop.drop { background: var(--accent); color: var(--accent-ink); }
+
+.empty { max-width: 440px; padding: 48px 8px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.empty h2 { font-family: var(--font-display); font-size: 28px; margin: 0; text-wrap: balance; }
+.empty p { margin: 0; color: var(--muted); }
+
+.zoom {
+  position: sticky; left: 16px; bottom: 16px; float: left; margin-top: -60px;
+  display: flex; align-items: center; gap: 2px; padding: 3px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgb(0 0 0 / .08);
+}
+.zoom button { border: 0; background: transparent; width: 30px; height: 28px; border-radius: 6px; font-size: 16px; }
+.zoom button:hover { background: var(--paper); }
+.zoom span { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Document view */
+.docview { padding: 40px 32px 80px; }
+.doc { max-width: 68ch; margin: 0 auto; }
+.doc h1 { font-family: var(--font-display); font-size: 40px; line-height: 1.1; margin: 0 0 16px; text-wrap: balance; }
+.doc .intro { font-size: 17px; color: var(--muted); margin-bottom: 32px; }
+.doc .intro p { margin: 0 0 10px; }
+.doc-node { border-left: 3px solid color-mix(in srgb, var(--hue) 55%, transparent); padding: 2px 0 2px 18px; margin: 18px 0; }
+.doc-node .doc-node { margin: 14px 0 6px; }
+.doc-node.d0 { --hue: var(--b1); border-left-width: 5px; margin-top: 36px; }
+.doc-h { margin: 0 0 6px; text-wrap: balance; cursor: pointer; }
+.doc-h:hover { color: var(--accent); }
+.doc-h .num { color: color-mix(in srgb, var(--hue) 75%, var(--muted)); font-variant-numeric: tabular-nums; margin-right: .4em; }
+.d0 > .doc-h { font-family: var(--font-display); font-size: 28px; line-height: 1.2; }
+.d1 > .doc-h { font-size: 20px; }
+.d2 > .doc-h { font-size: 17px; }
+.d3 > .doc-h, .d4 > .doc-h { font-size: 15px; }
+.doc-node p { margin: 0 0 8px; }
+.doc-live { font-size: 14px; color: var(--muted); }
+.doc-live strong { color: var(--ink); font-weight: 600; }
+.doc-empty { color: var(--muted); font-style: italic; }
+
+/* Panel */
+.panel h2 { font-family: var(--font-display); font-size: 22px; line-height: 1.2; margin: 0; text-wrap: balance; }
+.panel .hint { margin: 0; font-size: 14px; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 13px; font-weight: 600; }
+.field .sub { font-weight: 400; color: var(--muted); }
+.field input, .field textarea, .field select {
+  width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--paper);
+}
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field textarea { resize: vertical; min-height: 84px; field-sizing: content; max-height: 320px; line-height: 1.45; }
+#f-title { font-weight: 600; font-size: 17px; }
+.chip {
+  display: inline-block; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600;
+  padding: 3px 8px; border-radius: 999px; background: color-mix(in srgb, var(--hue) 16%, var(--surface)); color: color-mix(in srgb, var(--hue) 80%, var(--ink));
+}
+.lineage { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.lineage button { border: 0; background: none; padding: 1px 3px; border-radius: 4px; color: var(--ink); font-weight: 500; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.lineage button:hover { color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.group { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.group h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.kid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.kid-list button { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 5px 9px; font-size: 14px; }
+.kid-list button:hover { border-color: var(--accent); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.card .via { font-size: 12.5px; font-style: italic; color: var(--ink); border-left: 2px solid var(--conn); padding-left: 7px; margin: 2px 0; overflow-wrap: anywhere; }
+.shaped-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.shaped-list li { display: flex; flex-direction: column; gap: 5px; }
+.shaped-head { display: flex; align-items: center; gap: 6px; }
+.shaped-head .plink { flex: 1; text-align: left; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 5px 9px; font-size: 14px; font-weight: 500; }
+.shaped-head .plink:hover { border-color: var(--accent); }
+.rank-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.icon-btn.small { padding: 3px 7px; min-width: 28px; font-size: 13px; }
+.note-input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; background: var(--paper); font-size: 14px; font-style: italic; resize: vertical; field-sizing: content; min-height: 34px; line-height: 1.4; }
+.note-input:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); font-style: normal; }
+.shapes summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; }
+.shapes summary::-webkit-details-marker { display: none; }
+.shapes summary::before { content: "\25B8"; color: var(--muted); font-size: 12px; transition: transform .15s; }
+.shapes[open] summary::before { transform: rotate(90deg); }
+.shapes summary h3 { display: inline; }
+.check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.check-list li { display: flex; gap: 9px; align-items: flex-start; background: var(--paper); border-radius: 8px; padding: 8px 10px; }
+.check-list input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+.check-list label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; cursor: pointer; }
+.check-list input:checked + label { opacity: .55; }
+.ck-title { font-weight: 600; font-size: 14px; }
+.ck-text { color: var(--muted); }
+.ck-note { color: var(--ink); font-style: italic; }
+.doc-avoid strong { color: var(--danger); }
+.doc-shaped { font-size: 14px; color: var(--muted); margin: 6px 0 8px; }
+.doc-shaped strong { color: var(--ink); font-weight: 600; }
+.doc-shaped ol { margin: 4px 0 0; padding-left: 20px; }
+.doc-shaped button { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.parent-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.parent-list li { display: flex; align-items: center; gap: 6px; }
+.parent-list .plink { flex: 1; text-align: left; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 5px 9px; font-size: 14px; }
+.parent-list .plink:hover { border-color: var(--accent); }
+.btn.small { padding: 4px 8px; font-size: 13px; color: var(--muted); }
+.btn.small:hover { color: var(--danger); }
+.chip-shared { --hue: var(--accent); }
+.kid-shared { font-size: 12px; color: var(--muted); }
+.doc-ref { font-size: 14px; color: var(--muted); margin: 6px 0 8px; }
+.doc-ref button { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.doc-ref-child { padding-left: 18px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+.stats div { background: var(--paper); border-radius: 8px; padding: 10px; }
+.stats dt { font-size: 12px; color: var(--muted); }
+.stats dd { margin: 0; font-size: 22px; font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums; }
+.keys { font-size: 13px; color: var(--muted); }
+.keys summary { cursor: pointer; color: var(--ink); font-weight: 500; }
+.keys table { border-collapse: collapse; margin-top: 8px; }
+.keys td { padding: 3px 10px 3px 0; vertical-align: top; }
+kbd { font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 2px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--paper); color: var(--ink); }
+
+/* Modal */
+.modal-root { position: fixed; inset: 0; background: rgb(10 16 13 / .45); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.modal { background: var(--surface); border-radius: 14px; width: min(560px, 100%); max-height: calc(100% - 32px); overflow: auto; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 50px rgb(0 0 0 / .25); }
+.modal h2 { margin: 0; font-family: var(--font-display); font-size: 22px; text-wrap: balance; }
+.modal p { margin: 0; color: var(--muted); }
+.modal textarea { width: 100%; min-height: 220px; font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--paper); resize: vertical; }
+.modal .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.modal .error { color: var(--danger); font-size: 14px; margin: 0; }
+.seg { display: flex; gap: 2px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 3px; align-self: flex-start; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; color: var(--muted); font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--paper); padding: 9px 16px; border-radius: 8px; font-size: 14px; max-width: calc(100% - 32px);
+  transition: opacity .2s, transform .2s; z-index: 60;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 860px) {
+  body { height: auto; min-height: 100%; }
+  .work { grid-template-columns: 1fr; }
+  .tree-pane { max-height: 70vh; border-bottom: 1px solid var(--line); }
+  .panel { border-left: 0; }
+  .bar { padding: 12px 16px; }
+  .forest { padding: 24px 16px 88px; }
+  .docview { padding: 28px 16px 60px; }
+  .doc h1 { font-size: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="application/json" id="tree-data">{"format":"family-values-tree","version":2,"title":"Family Values","intro":"","example":false,"rev":0,"roots":[],"nodes":{}}</script>
+<script id="app-js">
+(function () {
+  'use strict';
+
+  var HEAD = '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Family Values Tree</title>\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=Instrument+Sans:wght@400;500;600&amp;display=swap">';
+  var DRAFT_KEY = 'fvt-draft:' + location.pathname;
+  var STASH_KEY = 'fvt-stash:' + location.pathname;
+
+  function $(s, el) { return (el || document).querySelector(s); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function str(v) { return typeof v === 'string' ? v : (v == null ? '' : String(v)); }
+  function uid() { return 'v' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function paras(text) {
+    return str(text).trim().split(/\n\s*\n/).filter(Boolean).map(function (p) {
+      return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+  function slug(s) { return (str(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'family-values'); }
+  function sanitize(s) { return str(s).replace(/\//g, '-'); }
+
+  /* ---------- State ----------
+     A value is one node. A node lists the ids of the values that grow from it (children).
+     A node may be the child of several parents; roots have no parents. Loops are never allowed. */
+  function normalize(d) {
+    if (Array.isArray(d)) d = { roots: d };
+    if (!d || typeof d !== 'object') d = {};
+    var nodes = {}, order = [];
+    function mk(n, id) {
+      order.push(id);
+      return {
+        id: id,
+        title: str(n.title != null ? n.title : n.name),
+        meaning: str(n.meaning != null ? n.meaning : n.description),
+        practice: str(n.practice),
+        avoid: str(n.avoid != null ? n.avoid : n.notThis),
+        notes: (function (o) {
+          var out = {};
+          if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(function (k) { if (typeof o[k] === 'string' && o[k]) out[sanitize(k)] = o[k]; });
+          return out;
+        })(n.notes),
+        rank: Array.isArray(n.rank) ? n.rank.filter(function (r) { return typeof r === 'string'; }).map(sanitize) : [],
+        collapsed: !!n.collapsed,
+        children: []
+      };
+    }
+    function addKid(pid, cid) { if (pid !== cid && nodes[pid].children.indexOf(cid) < 0) nodes[pid].children.push(cid); }
+    var givenRoots = [];
+    if (d.nodes && typeof d.nodes === 'object') {
+      var list = Array.isArray(d.nodes) ? d.nodes : Object.keys(d.nodes).map(function (k) { return Object.assign({ id: k }, d.nodes[k]); });
+      var raw = {};
+      list.forEach(function (n) {
+        if (!n || typeof n !== 'object') return;
+        var id = (typeof n.id === 'string' && n.id && !nodes[n.id]) ? sanitize(n.id) : uid();
+        if (nodes[id]) id = uid();
+        nodes[id] = mk(n, id);
+        raw[id] = Array.isArray(n.children) ? n.children : [];
+      });
+      Object.keys(raw).forEach(function (id) {
+        raw[id].forEach(function (c) { c = sanitize(c); if (nodes[c]) addKid(id, c); });
+      });
+      givenRoots = (Array.isArray(d.roots) ? d.roots : []).map(sanitize).filter(function (r) { return nodes[r]; });
+    } else {
+      // Nested form: the same id appearing in two places is one value with two parents.
+      var walk = function (n) {
+        if (!n || typeof n !== 'object') return null;
+        var id = (typeof n.id === 'string' && n.id) ? sanitize(n.id) : uid();
+        if (!nodes[id]) nodes[id] = mk(n, id);
+        (Array.isArray(n.children) ? n.children : []).map(walk).filter(Boolean).forEach(function (k) { addKid(id, k); });
+        return id;
+      };
+      givenRoots = (Array.isArray(d.roots) ? d.roots : []).map(walk).filter(Boolean);
+    }
+    // Remove any links that would make a loop.
+    var color = {};
+    function dfs(id) {
+      color[id] = 1;
+      nodes[id].children = nodes[id].children.filter(function (c) {
+        if (color[c] === 1) return false;
+        if (!color[c]) dfs(c);
+        return true;
+      });
+      color[id] = 2;
+    }
+    givenRoots.concat(order).forEach(function (id) { if (!color[id]) dfs(id); });
+    // Roots are exactly the values with no parents, in the given order.
+    var hasParent = {};
+    order.forEach(function (id) { nodes[id].children.forEach(function (c) { hasParent[c] = true; }); });
+    var roots = [];
+    givenRoots.concat(order).forEach(function (id) { if (!hasParent[id] && roots.indexOf(id) < 0) roots.push(id); });
+    return {
+      format: 'family-values-tree', version: 3,
+      title: (typeof d.title === 'string' && d.title.trim()) ? d.title : 'Our Family Values',
+      intro: str(d.intro),
+      example: !!d.example,
+      rev: (typeof d.rev === 'number' && isFinite(d.rev)) ? d.rev : 0,
+      roots: roots,
+      nodes: nodes
+    };
+  }
+
+  var state;
+  try { state = normalize(JSON.parse($('#tree-data').textContent)); } catch (e) { state = normalize({}); }
+
+  /* A "placement" is one spot where a value appears in the drawn tree (a path from a root). */
+  var placements = new Map(), parentsOf = new Map(), firstKey = new Map();
+  var selectedId = null, selectedKey = null, prefer = null;
+
+  function keyOf(parentKey, id) { return parentKey ? parentKey + '/' + id : id; }
+  function node(id) { return state.nodes[id]; }
+  function titleOf(id) { var n = node(id); return (n && n.title) || 'Untitled value'; }
+
+  function reindex() {
+    placements = new Map(); parentsOf = new Map(); firstKey = new Map();
+    Object.keys(state.nodes).forEach(function (id) { parentsOf.set(id, []); });
+    function walk(list, parentId, parentKey, depth, ri) {
+      list.forEach(function (id, i) {
+        var key = keyOf(parentKey, id);
+        var r = depth === 0 ? i : ri;
+        placements.set(key, { key: key, id: id, parentId: parentId, parentKey: parentKey, list: list, i: i, depth: depth, rootIdx: r });
+        if (!firstKey.has(id)) firstKey.set(id, key);
+        if (parentId) { var a = parentsOf.get(id); if (a.indexOf(parentId) < 0) a.push(parentId); }
+        walk(node(id).children, id, key, depth + 1, r);
+      });
+    }
+    walk(state.roots, null, null, 0, 0);
+    sortParents();
+    if (prefer) {
+      var want = prefer; prefer = null; selectedKey = null;
+      placements.forEach(function (p) { if (!selectedKey && p.id === want.id && (want.parent === undefined || p.parentId === want.parent)) selectedKey = p.key; });
+      if (selectedKey) selectedId = want.id;
+    }
+    if (selectedKey && !placements.has(selectedKey)) selectedKey = null;
+    if (!selectedKey && selectedId && firstKey.has(selectedId)) selectedKey = firstKey.get(selectedId);
+    selectedId = selectedKey ? placements.get(selectedKey).id : null;
+  }
+
+  function countBelow(id) {
+    var seen = {}, st = node(id).children.slice(), c = 0;
+    while (st.length) { var x = st.pop(); if (seen[x]) continue; seen[x] = 1; c++; st.push.apply(st, node(x).children); }
+    return c;
+  }
+  function reaches(from, to) {
+    var seen = {}, st = [from];
+    while (st.length) { var x = st.pop(); if (x === to) return true; if (seen[x]) continue; seen[x] = 1; st.push.apply(st, node(x).children); }
+    return false;
+  }
+  // Can `child` be placed under `parent` without making a loop?
+  function noLoop(child, parent) { return child !== parent && !reaches(child, parent); }
+  function newNode() { return { id: uid(), title: '', meaning: '', practice: '', avoid: '', notes: {}, rank: [], collapsed: false, children: [] }; }
+  // A value's parents in rank order (its first parent takes precedence).
+  // Parents without a saved rank default to "higher in the tree comes first".
+  function sortParents() {
+    var lvl = {};
+    function level(x) {
+      if (lvl[x] != null) return lvl[x];
+      lvl[x] = 0;
+      var ps = parentsOf.get(x) || [];
+      lvl[x] = ps.length ? 1 + Math.max.apply(null, ps.map(level)) : 0;
+      return lvl[x];
+    }
+    parentsOf.forEach(function (ps, id) {
+      var n = node(id); if (!n.rank) n.rank = [];
+      var r = n.rank.filter(function (x) { return ps.indexOf(x) >= 0; });
+      ps.map(function (x, i) { return { x: x, i: i }; })
+        .filter(function (o) { return r.indexOf(o.x) < 0; })
+        .sort(function (a, b) { return (level(a.x) - level(b.x)) || (a.i - b.i); })
+        .forEach(function (o) { r.push(o.x); });
+      n.rank = r;
+      ps.sort(function (a, b) { return r.indexOf(a) - r.indexOf(b); });
+    });
+  }
+  function noteOf(id, parentId) { var n = node(id); return (n && n.notes && n.notes[parentId]) || ''; }
+  // Every value above this one, highest precedence first.
+  function ancestorsOf(id) {
+    var lvl = {}, seen = {}, list = [];
+    function level(x) {
+      if (lvl[x] != null) return lvl[x];
+      var ps = parentsOf.get(x) || [];
+      lvl[x] = ps.length ? 1 + Math.max.apply(null, ps.map(level)) : 0;
+      return lvl[x];
+    }
+    var st = (parentsOf.get(id) || []).slice();
+    while (st.length) { var x = st.shift(); if (seen[x]) continue; seen[x] = 1; list.push(x); st.push.apply(st, parentsOf.get(x) || []); }
+    var order = Array.from(firstKey.keys());
+    list.sort(function (a, b) { return (level(a) - level(b)) || (order.indexOf(a) - order.indexOf(b)); });
+    return list;
+  }
+  function kindOf(id, depth) { return depth === 0 ? 'Root value' : (node(id).children.length ? 'Branch' : 'Leaf'); }
+
+  var view = 'tree', zoom = 1;
+  var dirty = false, saving = false, readOnly = false;
+  var artifactApi; // undefined = pending, null = unavailable
+  var downloadsApi = null;
+  var editSnap = null;
+  var pendingDraft = null;
+
+  /* ---------- History ---------- */
+  var undoStack = [], redoStack = [];
+  function snap() { return JSON.stringify(state); }
+  function content() { var c = JSON.parse(snap()); c.rev = 0; c.example = false; return JSON.stringify(c); }
+  function pushUndo(s) { undoStack.push(s); if (undoStack.length > 200) undoStack.shift(); redoStack.length = 0; }
+  function commit(fn) { pushUndo(snap()); fn(); state.example = false; markDirty(); render(); }
+  function restore(s) {
+    var rev = state.rev; state = JSON.parse(s); state.rev = rev;
+    markDirty(); render();
+  }
+  function undo() { if (!undoStack.length) return; redoStack.push(snap()); restore(undoStack.pop()); }
+  function redo() { if (!redoStack.length) return; undoStack.push(snap()); restore(redoStack.pop()); }
+
+  /* ---------- Drafts (this browser only) ---------- */
+  var draftTimer = null;
+  function writeDraft() {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ baseRev: state.rev, data: snap(), t: Date.now() })); } catch (e) {}
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+  function markDirty() {
+    dirty = true;
+    clearTimeout(draftTimer); draftTimer = setTimeout(writeDraft, 400);
+    updateSaveUI();
+  }
+
+  /* ---------- Shell ---------- */
+  $('#app').innerHTML =
+    '<header class="bar">' +
+      '<div class="doc-id"><span class="eyebrow">Family values tree</span>' +
+      '<input id="doc-title" class="doc-title" data-scope="tree" data-field="title" aria-label="Title of your values document" autocomplete="off"></div>' +
+      '<div class="tabs" role="tablist" aria-label="View">' +
+        '<button type="button" role="tab" id="tab-tree" data-view="tree">Tree</button>' +
+        '<button type="button" role="tab" id="tab-doc" data-view="doc">Document</button>' +
+      '</div>' +
+      '<div class="tools">' +
+        '<button type="button" id="btn-undo" class="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo">&#8630;</button>' +
+        '<button type="button" id="btn-redo" class="icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">&#8631;</button>' +
+        '<span class="sep" aria-hidden="true"></span>' +
+        '<button type="button" id="btn-import" class="btn">Import</button>' +
+        '<button type="button" id="btn-export" class="btn">Export</button>' +
+        '<span id="save-status" class="save-status"></span>' +
+        '<button type="button" id="btn-save" class="btn primary" hidden>Save</button>' +
+      '</div>' +
+    '</header>' +
+    '<div id="banner" class="banner" hidden></div>' +
+    '<main class="work">' +
+      '<section class="tree-pane" id="tree-pane" aria-label="Values tree">' +
+        '<div id="forest" class="forest"></div>' +
+        '<div id="docview" class="docview" hidden></div>' +
+        '<div class="zoom" id="zoom"><button type="button" data-zoom="-1" aria-label="Zoom out">&minus;</button><span id="zoom-label">100%</span><button type="button" data-zoom="1" aria-label="Zoom in">+</button></div>' +
+      '</section>' +
+      '<aside class="panel" id="panel" aria-label="Details"></aside>' +
+    '</main>' +
+    '<div id="modal-root" class="modal-root" hidden><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div></div>' +
+    '<div id="toast" class="toast" role="status" aria-live="polite"></div>';
+
+  /* ---------- Rendering ---------- */
+  function render() {
+    reindex();
+    renderHeader();
+    renderBanner();
+    if (view === 'tree') renderTree(); else renderDoc();
+    renderPanel();
+    updateSaveUI();
+  }
+
+  function renderHeader() {
+    var t = $('#doc-title');
+    if (document.activeElement !== t) t.value = state.title;
+    $('#tab-tree').setAttribute('aria-selected', String(view === 'tree'));
+    $('#tab-doc').setAttribute('aria-selected', String(view === 'doc'));
+    $('#forest').hidden = view !== 'tree';
+    $('#zoom').hidden = view !== 'tree';
+    $('#docview').hidden = view !== 'doc';
+    $('#btn-undo').disabled = !undoStack.length;
+    $('#btn-redo').disabled = !redoStack.length;
+  }
+
+  function renderBanner() {
+    var rows = [];
+    if (pendingDraft) {
+      var when = new Date(pendingDraft.t);
+      var older = pendingDraft.baseRev !== state.rev;
+      rows.push('<div class="banner-row"><p>You have unsaved changes in this browser from ' +
+        esc(when.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })) + '.' +
+        (older ? ' They were made on an earlier saved version, so restoring them replaces what is saved now.' : '') +
+        '</p><button type="button" class="btn primary" data-act="restore-draft">Restore my changes</button>' +
+        '<button type="button" class="btn ghost" data-act="discard-draft">Discard</button></div>');
+    }
+    if (state.example) {
+      rows.push('<div class="banner-row"><p><strong>This is an example tree</strong> to show how it works. Edit it into your own, or clear it and start from scratch.</p>' +
+        '<button type="button" class="btn" data-act="start-blank">Start with a blank tree</button></div>');
+    }
+    var b = $('#banner');
+    b.innerHTML = rows.join('');
+    b.hidden = !rows.length;
+  }
+
+  function alsoText(others) {
+    if (!others.length) return '';
+    return 'Also grows from ' + titleOf(others[0]) + (others.length > 1 ? ' and ' + (others.length - 1) + ' more' : '');
+  }
+
+  function branchHTML(id, parentKey, depth, ri) {
+    var n = node(id);
+    var key = keyOf(parentKey, id);
+    var p = placements.get(key);
+    var hasKids = n.children.length > 0;
+    var hue = depth === 0 ? ' style="--hue:var(--b' + (ri % 5 + 1) + ')"' : '';
+    var kind = kindOf(id, depth) + (depth > 0 ? ' · level ' + (depth + 1) : '');
+    var others = parentsOf.get(id).filter(function (x) { return x !== p.parentId; });
+    var sel = id === selectedId ? (key === selectedKey ? ' selected' : ' selected-also') : '';
+    var label = titleOf(id) + ', ' + kindOf(id, depth) + (others.length ? ', ' + alsoText(others) : '');
+    var h = '<div class="branch' + (depth === 0 ? ' is-root' : '') + '"' + hue + '>' +
+      '<div class="node-wrap">' +
+        '<button type="button" class="card' + sel + (others.length ? ' shared' : '') + '" data-id="' + esc(id) + '" data-key="' + esc(key) + '" draggable="true" aria-label="' + esc(label) + '">' +
+          '<span class="kind">' + esc(kind) + '</span>' +
+          '<span class="title' + (n.title ? '' : ' placeholder') + '">' + esc(titleOf(id)) + '</span>' +
+          (n.meaning ? '<span class="meaning">' + esc(n.meaning) + '</span>' : '') +
+          (p.parentId && noteOf(id, p.parentId) ? '<span class="via" title="How ' + esc(titleOf(p.parentId)) + ' shapes this">' + esc(noteOf(id, p.parentId)) + '</span>' : '') +
+          ((n.practice || n.avoid) ? '<span class="has-practice">' + (n.practice ? '&#10003; How we live it' : '') + (n.practice && n.avoid ? ' · ' : '') + (n.avoid ? '&#10005; Not this' : '') + '</span>' : '') +
+          (others.length ? '<span class="also"><span aria-hidden="true">&#8644;</span> ' + esc(alsoText(others)) + '</span>' : '') +
+        '</button>' +
+        (hasKids ? '<button type="button" class="fold" data-fold="' + esc(id) + '" aria-expanded="' + (!n.collapsed) + '" title="' + (n.collapsed ? 'Show the ' + countBelow(id) + ' values under this' : 'Hide the values under this') + '">' + (n.collapsed ? '+' + countBelow(id) : '&minus;') + '</button>' : '') +
+        '<button type="button" class="add-child" data-add-child="' + esc(key) + '" title="Add a value that grows from this one" aria-label="Add a value under ' + esc(titleOf(id)) + '">+</button>' +
+      '</div>';
+    if (hasKids && !n.collapsed) {
+      h += '<div class="children">' + n.children.map(function (c) { return branchHTML(c, key, depth + 1, ri); }).join('') + '</div>';
+    }
+    return h + '</div>';
+  }
+
+  function renderTree() {
+    var f = $('#forest');
+    f.style.zoom = zoom;
+    $('#zoom-label').textContent = Math.round(zoom * 100) + '%';
+    if (!state.roots.length) {
+      f.innerHTML = '<div class="empty"><h2>Plant your first root value</h2>' +
+        '<p>Start with the few values everything else should grow from. You can add more specific values underneath each one as you go.</p>' +
+        '<button type="button" class="btn primary" data-act="add-root">Add a root value</button></div>';
+      return;
+    }
+    f.innerHTML = state.roots.map(function (r, i) { return branchHTML(r, null, 0, i); }).join('') +
+      '<div class="root-drop" data-root-drop="1">Drop here to make it a root value</div>' +
+      '<button type="button" class="add-root" data-act="add-root">+ Add a root value</button>';
+  }
+
+  // Numbering for the document: each value is written out in full once, at its first spot.
+  function docPlan() {
+    var num = {}, home = {};
+    function walk(list, parentId, prefix) {
+      var c = 0;
+      list.forEach(function (id) {
+        if (num[id]) return;
+        var top = (parentsOf.get(id) || [])[0] || null;
+        if (top !== parentId) return; // written out in full under its top-ranked parent
+        c++; num[id] = prefix + c + '.'; home[id] = parentId;
+        walk(node(id).children, id, num[id]);
+      });
+    }
+    walk(state.roots, null, '');
+    return { num: num, home: home };
+  }
+
+  function docNodeHTML(id, depth, ri, plan) {
+    var n = node(id);
+    var hue = depth === 0 ? ' style="--hue:var(--b' + (ri % 5 + 1) + ')"' : '';
+    var tag = 'h' + Math.min(depth + 2, 6);
+    var parents = parentsOf.get(id);
+    var showShaped = parents.length > 1 || parents.some(function (x) { return noteOf(id, x); });
+    var h = '<section class="doc-node d' + Math.min(depth, 4) + '"' + hue + '>' +
+      '<' + tag + ' class="doc-h" data-sel="' + esc(firstKey.get(id)) + '"><span class="num">' + plan.num[id] + '</span>' + esc(titleOf(id)) + '</' + tag + '>' +
+      (n.meaning ? paras(n.meaning) : '') +
+      (n.practice ? '<div class="doc-live"><strong>How we live it:</strong> ' + paras(n.practice).replace(/^<p>/, '').replace(/<\/p>$/, '') + '</div>' : '') +
+      (n.avoid ? '<div class="doc-live doc-avoid"><strong>Not this:</strong> ' + paras(n.avoid).replace(/^<p>/, '').replace(/<\/p>$/, '') + '</div>' : '') +
+      (showShaped ? '<div class="doc-shaped"><strong>Shaped by</strong><ol>' + parents.map(function (o) {
+        return '<li><button type="button" data-sel="' + esc(firstKey.get(o)) + '">' + esc(titleOf(o)) + '</button>' +
+          (noteOf(id, o) ? ': ' + esc(noteOf(id, o)) : '') + '</li>';
+      }).join('') + '</ol></div>' : '');
+    n.children.forEach(function (c) {
+      if (plan.home[c] === id) h += docNodeHTML(c, depth + 1, ri, plan);
+      else h += '<p class="doc-ref doc-ref-child">Also includes <button type="button" data-sel="' + esc(firstKey.get(c)) + '">' + esc(plan.num[c] + ' ' + titleOf(c)) + '</button></p>';
+    });
+    return h + '</section>';
+  }
+
+  function renderDoc() {
+    var d = $('#docview');
+    var plan = docPlan();
+    var body = state.roots.length
+      ? state.roots.map(function (r, i) { return docNodeHTML(r, 0, i, plan); }).join('')
+      : '<p class="doc-empty">No values yet. Switch to the Tree view to add your first root value.</p>';
+    d.innerHTML = '<article class="doc"><h1>' + esc(state.title) + '</h1>' +
+      (state.intro.trim() ? '<div class="intro">' + paras(state.intro) + '</div>' : '') + body + '</article>';
+  }
+
+  function stats() {
+    var deepest = 0, shared = 0;
+    placements.forEach(function (p) { deepest = Math.max(deepest, p.depth + 1); });
+    parentsOf.forEach(function (ps) { if (ps.length > 1) shared++; });
+    return { roots: state.roots.length, total: Object.keys(state.nodes).length, deepest: deepest, shared: shared };
+  }
+
+  function optionsList(filter) {
+    var h = '';
+    firstKey.forEach(function (k, id) {
+      if (!filter(id)) return;
+      h += '<option value="' + esc(id) + '">' + ' '.repeat(placements.get(k).depth * 2) + esc(titleOf(id)) + '</option>';
+    });
+    return h;
+  }
+
+  function renderPanel() {
+    var p = $('#panel');
+    var pl = selectedKey && placements.get(selectedKey);
+    if (!pl) {
+      var s = stats();
+      p.innerHTML =
+        '<h2>About this tree</h2>' +
+        '<p class="hint">Root values sit on the left. Every value that branches from them is shaped by them and gets more specific as it goes. A value can grow from more than one parent. Select any value to edit it.</p>' +
+        '<div class="field"><label for="f-intro">Why we’re writing this <span class="sub">(opens the document)</span></label>' +
+        '<textarea id="f-intro" data-scope="tree" data-field="intro" rows="4" placeholder="What do we hope this gives our family?"></textarea></div>' +
+        '<dl class="stats"><div><dt>Root values</dt><dd>' + s.roots + '</dd></div><div><dt>Values in all</dt><dd>' + s.total + '</dd></div><div><dt>Levels deep</dt><dd>' + s.deepest + '</dd></div></dl>' +
+        (s.shared ? '<p class="hint">' + s.shared + (s.shared === 1 ? ' value grows' : ' values grow') + ' from more than one parent.</p>' : '') +
+        '<div class="row"><button type="button" class="btn primary" data-act="add-root">Add a root value</button></div>' +
+        '<details class="keys"><summary>Tips and keyboard shortcuts</summary>' +
+        '<p>Drag a value onto another to move it underneath. Hold <kbd>Alt</kbd> (<kbd>Option</kbd> on a Mac) while you drop to connect it there too, keeping it where it is. Select a value, then:</p><table>' +
+        '<tr><td><kbd>C</kbd></td><td>Add a child value</td></tr>' +
+        '<tr><td><kbd>N</kbd></td><td>Add a sibling value</td></tr>' +
+        '<tr><td><kbd>Enter</kbd></td><td>Edit the selected value (Enter again to finish)</td></tr>' +
+        '<tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd></td><td>Move between values</td></tr>' +
+        '<tr><td><kbd>Alt</kbd>+<kbd>&uarr;</kbd>/<kbd>&darr;</kbd></td><td>Reorder among siblings</td></tr>' +
+        '<tr><td><kbd>Delete</kbd></td><td>Delete the value</td></tr>' +
+        '<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>' +
+        '<tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save</td></tr></table></details>';
+      $('#f-intro').value = state.intro;
+      return;
+    }
+    var id = pl.id, n = node(id);
+    var parents = parentsOf.get(id);
+    var hue = 'var(--b' + (pl.rootIdx % 5 + 1) + ')';
+
+    var crumbs = [];
+    for (var k = pl.parentKey; k; k = placements.get(k).parentKey) crumbs.unshift(placements.get(k));
+    var lineage = crumbs.length
+      ? '<nav class="lineage" aria-label="Path to this spot">' + (parents.length > 1 ? 'In this spot, under ' : 'Grows from ') + crumbs.map(function (c) {
+          return '<button type="button" data-sel="' + esc(c.key) + '">' + esc(titleOf(c.id)) + '</button>';
+        }).join('<span aria-hidden="true">&rsaquo;</span>') + '</nav>'
+      : '<p class="hint">A root value. Every value beneath it grows from it.</p>';
+
+    var parentGroup = '';
+    if (parents.length) {
+      parentGroup = '<div class="group"><h3>Shaped by' + (parents.length > 1 ? ' ' + parents.length + ' values, in order of precedence' : '') + '</h3>' +
+        '<ol class="shaped-list">' +
+        parents.map(function (pid, i) {
+          var fid = 'f-note-' + i;
+          return '<li><div class="shaped-head">' +
+              (parents.length > 1 ? '<span class="rank-num" aria-hidden="true">' + (i + 1) + '</span>' : '') +
+              '<button type="button" class="plink" data-sel="' + esc(firstKey.get(pid)) + '">' + esc(titleOf(pid)) + '</button>' +
+              (parents.length > 1
+                ? '<button type="button" class="icon-btn small" data-act="rank" data-parent="' + esc(pid) + '" data-dir="-1"' + (i === 0 ? ' disabled' : '') + ' aria-label="Give ' + esc(titleOf(pid)) + ' more precedence">&uarr;</button>' +
+                  '<button type="button" class="icon-btn small" data-act="rank" data-parent="' + esc(pid) + '" data-dir="1"' + (i === parents.length - 1 ? ' disabled' : '') + ' aria-label="Give ' + esc(titleOf(pid)) + ' less precedence">&darr;</button>' +
+                  '<button type="button" class="btn ghost small" data-act="unlink" data-parent="' + esc(pid) + '" aria-label="Stop it growing from ' + esc(titleOf(pid)) + '">Remove</button>'
+                : '') +
+            '</div>' +
+            '<label class="sr-only" for="' + fid + '">How ' + esc(titleOf(pid)) + ' shapes ' + esc(titleOf(id)) + '</label>' +
+            '<textarea class="note-input" id="' + fid + '" data-field="note" data-parent="' + esc(pid) + '" rows="1" placeholder="How does ' + esc(titleOf(pid)) + ' shape this? e.g. together, not alone for hours"></textarea></li>';
+        }).join('') + '</ol>' +
+        (parents.length > 1 ? '<p class="hint">When these pull in different directions, the higher one wins. It appears under each of them in the tree, with the same words everywhere.</p>' : '') +
+        '</div>';
+    }
+
+    var anc = ancestorsOf(id);
+    var shapes = '';
+    if (anc.length) {
+      shapes = '<details class="group shapes" open><summary><h3>Everything that shapes this (' + anc.length + ')</h3></summary>' +
+        '<p class="hint">Run a decision past each of these, starting at the top. The ticks are just for you and aren’t saved.</p><ul class="check-list">' +
+        anc.map(function (a, i) {
+          var direct = parents.indexOf(a) >= 0;
+          var an = node(a);
+          return '<li><input type="checkbox" id="chk-' + i + '"><label for="chk-' + i + '"><span class="ck-title">' + esc(titleOf(a)) + '</span>' +
+            (an.meaning ? '<span class="ck-text">' + esc(an.meaning) + '</span>' : '') +
+            (direct && noteOf(id, a) ? '<span class="ck-note">For ' + esc(titleOf(id)) + ': ' + esc(noteOf(id, a)) + '</span>' : '') +
+            (an.avoid ? '<span class="ck-text">Not this: ' + esc(an.avoid) + '</span>' : '') +
+            '</label></li>';
+        }).join('') + '</ul></details>';
+    }
+
+    var linkable = optionsList(function (x) { return parents.indexOf(x) < 0 && noLoop(id, x); });
+    var connect = '<div class="group"><h3>Connect to another parent</h3>' +
+      '<p class="hint">Use this when a value grows from more than one place, like Forgiveness growing from both Love and Faith.</p>' +
+      (linkable
+        ? '<div class="field"><label for="f-link">Also grows from</label><select id="f-link"><option value="">Choose a value…</option>' + linkable + '</select></div>'
+        : '<p class="hint">There’s no other value it can connect to without making a loop.</p>') +
+      '</div>';
+
+    var moveOpts = (pl.depth > 0 ? '<option value="__root">Make it a root value' + (parents.length > 1 ? ' (removes all its links)' : '') + '</option>' : '') +
+      optionsList(function (x) { return x !== pl.parentId && noLoop(id, x); });
+
+    var kids = n.children.length
+      ? '<ul class="kid-list">' + n.children.map(function (c) {
+          var shared = parentsOf.get(c).length > 1;
+          return '<li><button type="button" data-sel="' + esc(selectedKey + '/' + c) + '">' + esc(titleOf(c)) + (shared ? ' <span class="kid-shared">&#8644; shared</span>' : '') + '</button></li>';
+        }).join('') + '</ul>'
+      : '<p class="hint">Nothing grows from this yet. Add a more specific value underneath it.</p>';
+
+    var grand = pl.parentKey ? placements.get(pl.parentKey) : null;
+    var outBlocked = !grand || (grand.parentId === null && parents.length > 1);
+    var prevId = pl.i > 0 ? pl.list[pl.i - 1] : null;
+    var inBlocked = !prevId || !noLoop(id, prevId);
+
+    p.innerHTML =
+      '<div style="--hue:' + hue + '" class="row"><span class="chip">' + esc(kindOf(id, pl.depth)) + (pl.depth ? ' · level ' + (pl.depth + 1) : '') + '</span>' +
+        (parents.length > 1 ? '<span class="chip chip-shared">&#8644; ' + parents.length + ' parents</span>' : '') + '</div>' +
+      lineage +
+      '<div class="field"><label for="f-title">Value</label><input id="f-title" data-field="title" autocomplete="off" placeholder="e.g. Kindness"></div>' +
+      '<div class="field"><label for="f-meaning">What it means to us</label><textarea id="f-meaning" data-field="meaning" rows="3" placeholder="In a sentence or two, what does this value mean in our family?"></textarea></div>' +
+      '<div class="field"><label for="f-practice">How we live it <span class="sub">(habits, examples, things we say)</span></label><textarea id="f-practice" data-field="practice" rows="3" placeholder="What does this look like on an ordinary Tuesday?"></textarea></div>' +
+      '<div class="field"><label for="f-avoid">Not this <span class="sub">(good things we pass on, and why)</span></label><textarea id="f-avoid" data-field="avoid" rows="3" placeholder="e.g. Resort trips where we mostly lie around and are waited on"></textarea></div>' +
+      '<div class="row"><button type="button" class="btn primary" data-act="add-child">Add a value under this</button><button type="button" class="btn" data-act="add-sibling">Add a sibling</button></div>' +
+      parentGroup +
+      shapes +
+      '<div class="group"><h3>Values that grow from this (' + n.children.length + ')</h3>' + kids + '</div>' +
+      connect +
+      '<div class="group"><h3>Arrange' + (parents.length > 1 ? ' in this spot' : '') + '</h3><div class="row">' +
+        '<button type="button" class="btn" data-act="up"' + (pl.i === 0 ? ' disabled' : '') + '>Move up</button>' +
+        '<button type="button" class="btn" data-act="down"' + (pl.i === pl.list.length - 1 ? ' disabled' : '') + '>Move down</button>' +
+        '<button type="button" class="btn" data-act="out"' + (outBlocked ? ' disabled' : '') + ' title="' + (grand && grand.parentId === null && parents.length > 1 ? 'A value with other parents can’t be a root value. Remove its other links first.' : 'Make it a sibling of the value it grows from here') + '">Move out a level</button>' +
+        '<button type="button" class="btn" data-act="in"' + (inBlocked ? ' disabled' : '') + ' title="Put it under the value above it">Move under the one above</button>' +
+      '</div>' +
+      (moveOpts ? '<div class="field"><label for="f-move">Move ' + (parents.length > 1 ? 'this link ' : '') + 'under another value</label><select id="f-move"><option value="">Choose where to move it…</option>' + moveOpts + '</select></div>' : '') +
+      '</div>' +
+      '<div class="group"><div class="row"><button type="button" class="btn danger" data-act="delete">Delete this value…</button><button type="button" class="btn ghost" data-act="deselect">Done</button></div></div>';
+    $('#f-title').value = n.title;
+    $('#f-meaning').value = n.meaning;
+    $('#f-practice').value = n.practice;
+    $('#f-avoid').value = n.avoid || '';
+    parents.forEach(function (pid, i) { var t = $('#f-note-' + i); if (t) t.value = noteOf(id, pid); });
+  }
+
+  /* ---------- Selection & ops ---------- */
+  function focusCard(key) {
+    var c = key && document.querySelector('.card[data-key="' + CSS.escape(key) + '"]');
+    if (c) { c.focus({ preventScroll: true }); c.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  }
+  function selectKey(key, focus) {
+    selectedKey = key; selectedId = null;
+    render();
+    if (focus && view === 'tree') focusCard(selectedKey);
+  }
+  function focusTitle() { var t = $('#f-title'); if (t) { t.focus(); t.select(); } }
+  function afterAdd() { focusCard(selectedKey); focusTitle(); }
+
+  function addRoot() {
+    var n = newNode();
+    commit(function () { state.nodes[n.id] = n; state.roots.push(n.id); selectedKey = n.id; });
+    afterAdd();
+  }
+  function addChild(key) {
+    var pl = placements.get(key); if (!pl) return; var n = newNode();
+    commit(function () { state.nodes[n.id] = n; node(pl.id).children.push(n.id); node(pl.id).collapsed = false; selectedKey = key + '/' + n.id; });
+    afterAdd();
+  }
+  function addSibling(key) {
+    var pl = placements.get(key); if (!pl) return; var n = newNode();
+    commit(function () { state.nodes[n.id] = n; pl.list.splice(pl.i + 1, 0, n.id); selectedKey = keyOf(pl.parentKey, n.id); });
+    afterAdd();
+  }
+  function move(key, dir) {
+    var pl = placements.get(key); if (!pl) return; var j = pl.i + dir;
+    if (j < 0 || j >= pl.list.length) return;
+    commit(function () { var t = pl.list[j]; pl.list[j] = pl.id; pl.list[pl.i] = t; selectedKey = key; });
+  }
+  function removeAllParents(id) {
+    Object.keys(state.nodes).forEach(function (pid) {
+      var ch = node(pid).children, i = ch.indexOf(id); if (i >= 0) ch.splice(i, 1);
+    });
+  }
+  // Keep a moved link's place in the precedence order.
+  function swapRank(id, from, to) {
+    var r = node(id).rank || []; var i = r.indexOf(from);
+    if (i >= 0 && r.indexOf(to) < 0) r[i] = to;
+    if (node(id).notes && node(id).notes[from] && to && !node(id).notes[to]) { node(id).notes[to] = node(id).notes[from]; }
+    if (node(id).notes) delete node(id).notes[from];
+  }
+  function moveOut(key) {
+    var pl = placements.get(key); if (!pl || !pl.parentKey) return;
+    var g = placements.get(pl.parentKey);
+    var many = parentsOf.get(pl.id).length > 1;
+    if (g.parentId === null && many) return;
+    commit(function () {
+      pl.list.splice(pl.i, 1);
+      if (g.list.indexOf(pl.id) < 0) g.list.splice(g.i + 1, 0, pl.id);
+      if (g.parentId) swapRank(pl.id, pl.parentId, g.parentId);
+      prefer = { id: pl.id, parent: g.parentId };
+    });
+  }
+  function moveIn(key) {
+    var pl = placements.get(key); if (!pl || pl.i === 0) return;
+    var prev = pl.list[pl.i - 1];
+    if (!noLoop(pl.id, prev)) return;
+    commit(function () {
+      pl.list.splice(pl.i, 1);
+      if (node(prev).children.indexOf(pl.id) < 0) node(prev).children.push(pl.id);
+      if (pl.parentId) swapRank(pl.id, pl.parentId, prev);
+      node(prev).collapsed = false;
+      prefer = { id: pl.id, parent: prev };
+    });
+  }
+  // Move one spot of a value under another value (or to the root level).
+  function moveTo(key, targetId) {
+    var pl = placements.get(key); if (!pl) return;
+    var id = pl.id;
+    if (targetId === null) {
+      if (pl.depth === 0) return;
+      commit(function () { removeAllParents(id); state.roots.push(id); selectedKey = id; });
+      return;
+    }
+    if (targetId === pl.parentId) return;
+    if (!noLoop(id, targetId)) { toast('That would make a loop: “' + titleOf(targetId) + '” already grows from “' + titleOf(id) + '”.'); return; }
+    commit(function () {
+      pl.list.splice(pl.i, 1);
+      var t = node(targetId);
+      if (t.children.indexOf(id) < 0) t.children.push(id);
+      t.collapsed = false;
+      if (pl.parentId) swapRank(id, pl.parentId, targetId);
+      prefer = { id: id, parent: targetId };
+    });
+  }
+  // Add another parent, keeping the existing ones.
+  function link(id, targetId) {
+    if (parentsOf.get(id).indexOf(targetId) >= 0) { toast('“' + titleOf(id) + '” already grows from “' + titleOf(targetId) + '”.'); return; }
+    if (!noLoop(id, targetId)) { toast('That would make a loop: “' + titleOf(targetId) + '” already grows from “' + titleOf(id) + '”.'); return; }
+    commit(function () {
+      var r = state.roots.indexOf(id); if (r >= 0) state.roots.splice(r, 1);
+      var t = node(targetId); t.children.push(id); t.collapsed = false;
+      prefer = { id: id, parent: targetId };
+    });
+    toast('“' + titleOf(id) + '” now also grows from “' + titleOf(targetId) + '”');
+  }
+  function rerank(id, parentId, dir) {
+    var ps = parentsOf.get(id).slice(), i = ps.indexOf(parentId), j = i + dir;
+    if (i < 0 || j < 0 || j >= ps.length) return;
+    commit(function () { ps[i] = ps[j]; ps[j] = parentId; node(id).rank = ps; selectedKey = selectedKey; });
+  }
+  function unlink(id, parentId) {
+    var ps = parentsOf.get(id); if (ps.length < 2) return;
+    var keepParent = ps.filter(function (x) { return x !== parentId; })[0];
+    commit(function () {
+      var ch = node(parentId).children; ch.splice(ch.indexOf(id), 1);
+      var cur = placements.get(selectedKey);
+      prefer = { id: id, parent: cur && cur.parentId !== parentId ? cur.parentId : keepParent };
+    });
+  }
+  // Which values would go if this one is deleted with everything under it?
+  // A value under it survives if it also grows from somewhere that isn't being deleted.
+  function deletionSet(id) {
+    var S = {}; S[id] = 1;
+    var changed = true;
+    while (changed) {
+      changed = false;
+      Object.keys(state.nodes).forEach(function (x) {
+        if (S[x]) return;
+        var ps = parentsOf.get(x);
+        if (ps.length && ps.every(function (p) { return S[p]; })) { S[x] = 1; changed = true; }
+      });
+    }
+    return S;
+  }
+  function removeNode(key, keepChildren) {
+    var pl = placements.get(key); if (!pl) return;
+    var id = pl.id;
+    commit(function () {
+      var S;
+      if (keepChildren) {
+        var kids = node(id).children.slice();
+        var ps = parentsOf.get(id);
+        if (!ps.length) {
+          var lift = kids.filter(function (k) { return parentsOf.get(k).length === 1 && state.roots.indexOf(k) < 0; });
+          Array.prototype.splice.apply(state.roots, [state.roots.indexOf(id), 1].concat(lift));
+        } else {
+          ps.forEach(function (p) {
+            var ch = node(p).children;
+            var add = kids.filter(function (k) { return ch.indexOf(k) < 0 && noLoop(k, p); });
+            Array.prototype.splice.apply(ch, [ch.indexOf(id), 1].concat(add));
+          });
+        }
+        S = {}; S[id] = 1;
+      } else {
+        S = deletionSet(id);
+      }
+      Object.keys(S).forEach(function (x) { delete state.nodes[x]; });
+      state.roots = state.roots.filter(function (r) { return !S[r]; });
+      Object.keys(state.nodes).forEach(function (x) { node(x).children = node(x).children.filter(function (c) { return !S[c]; }); });
+      // Any child left with no parent becomes a root value.
+      var has = {};
+      Object.keys(state.nodes).forEach(function (x) { node(x).children.forEach(function (c) { has[c] = 1; }); });
+      Object.keys(state.nodes).forEach(function (x) { if (!has[x] && state.roots.indexOf(x) < 0) state.roots.push(x); });
+      selectedKey = pl.parentKey; selectedId = null;
+    });
+  }
+  function toggleFold(id) {
+    if (!node(id)) return;
+    node(id).collapsed = !node(id).collapsed;
+    markDirty(); render();
+  }
+  function navigate(k) {
+    var pl = placements.get(selectedKey); if (!pl) return;
+    var t = null;
+    if (k === 'ArrowLeft') t = pl.parentKey;
+    else if (k === 'ArrowRight' && node(pl.id).children.length) {
+      if (node(pl.id).collapsed) { node(pl.id).collapsed = false; markDirty(); }
+      t = pl.key + '/' + node(pl.id).children[0];
+    }
+    else if (k === 'ArrowUp' && pl.i > 0) t = keyOf(pl.parentKey, pl.list[pl.i - 1]);
+    else if (k === 'ArrowDown' && pl.i < pl.list.length - 1) t = keyOf(pl.parentKey, pl.list[pl.i + 1]);
+    if (t) selectKey(t, true);
+  }
+
+  /* ---------- Modals & toast ---------- */
+  var lastFocus = null;
+  function openModal(html, onReady) {
+    lastFocus = document.activeElement;
+    $('#modal').innerHTML = html;
+    $('#modal-root').hidden = false;
+    if (onReady) onReady($('#modal'));
+    var first = $('#modal [data-autofocus]') || $('#modal button');
+    if (first) first.focus();
+  }
+  function closeModal() {
+    $('#modal-root').hidden = true; $('#modal').innerHTML = '';
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  }
+  var toastTimer;
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3600);
+  }
+
+  function askDelete(key) {
+    var pl = placements.get(key); if (!pl) return;
+    var id = pl.id;
+    var name = node(id).title || 'this untitled value';
+    var below = countBelow(id);
+    var S = deletionSet(id);
+    var gone = Object.keys(S).length - 1;
+    var kept = below - gone;
+    var parents = parentsOf.get(id);
+    var hereOnly = parents.length > 1 && pl.parentId;
+    var msg = '';
+    if (below) {
+      msg = '<p>' + below + (below === 1 ? ' value grows' : ' values grow') + ' from it. You can delete ' + (below === 1 ? 'it' : 'them') + ' too, or keep ' + (below === 1 ? 'it' : 'them') + ' and move ' + (below === 1 ? 'it' : 'them') + ' up a level.' +
+        (kept > 0 ? ' ' + kept + (kept === 1 ? ' of them also grows' : ' of them also grow') + ' from other values, so ' + (kept === 1 ? 'it stays' : 'they stay') + ' either way.' : '') + ' Undo is available.</p>';
+    } else msg = '<p>You can undo this.</p>';
+    if (hereOnly) msg = '<p>“' + esc(name) + '” grows from ' + parents.length + ' values. You can remove it from “' + esc(titleOf(pl.parentId)) + '” only, or delete it everywhere.</p>' + msg;
+    openModal(
+      '<h2 id="modal-title">Delete “' + esc(name) + '”?</h2>' + msg +
+      '<div class="actions"><button type="button" class="btn" data-m="cancel">Cancel</button>' +
+      (hereOnly ? '<button type="button" class="btn" data-m="unlink">Remove from “' + esc(titleOf(pl.parentId)) + '” only</button>' : '') +
+      (below ? '<button type="button" class="btn" data-m="keep">Delete only this value</button>' : '') +
+      '<button type="button" class="btn danger-fill" data-m="all">' + (below ? 'Delete it and everything under it' : (hereOnly ? 'Delete everywhere' : 'Delete')) + '</button></div>',
+      function (m) {
+        m.onclick = function (ev) {
+          var b = ev.target.closest('[data-m]'); if (!b) return;
+          var a = b.dataset.m; closeModal();
+          if (a === 'all') removeNode(key, false);
+          else if (a === 'keep') removeNode(key, true);
+          else if (a === 'unlink') unlink(id, pl.parentId);
+          if (a !== 'cancel' && selectedKey) focusCard(selectedKey);
+        };
+      });
+  }
+
+  function askStartBlank() {
+    openModal('<h2 id="modal-title">Start with a blank tree?</h2><p>This clears the example values and the intro so you can build your own from scratch. You can undo it.</p>' +
+      '<div class="actions"><button type="button" class="btn" data-m="cancel">Cancel</button><button type="button" class="btn primary" data-m="ok">Start blank</button></div>',
+      function (m) {
+        m.onclick = function (ev) {
+          var b = ev.target.closest('[data-m]'); if (!b) return; closeModal();
+          if (b.dataset.m === 'ok') commit(function () { state.roots = []; state.nodes = {}; state.intro = ''; state.title = 'Our Family Values'; selectedKey = null; selectedId = null; });
+        };
+      });
+  }
+
+  /* ---------- Export / import ---------- */
+  function exportData() {
+    var list = [];
+    firstKey.forEach(function (k, id) {
+      var n = node(id);
+      var ps = parentsOf.get(id), notes = {};
+      ps.forEach(function (p) { if (noteOf(id, p)) notes[p] = noteOf(id, p); });
+      list.push({ id: id, title: n.title, meaning: n.meaning, practice: n.practice, avoid: n.avoid, rank: ps.slice(), notes: notes, collapsed: n.collapsed, children: n.children.slice() });
+    });
+    return {
+      format: 'family-values-tree', version: 3, title: state.title, intro: state.intro,
+      exportedAt: new Date().toISOString(),
+      roots: state.roots.slice(),
+      nodes: list
+    };
+  }
+  function toMarkdown() {
+    var plan = docPlan();
+    var out = ['# ' + state.title, ''];
+    if (state.intro.trim()) out.push(state.intro.trim(), '');
+    function one(s) { return s.trim().replace(/\n+/g, ' '); }
+    function walk(id, depth) {
+      var n = node(id), t = titleOf(id), num = plan.num[id];
+      var ps = parentsOf.get(id);
+      var shaped = (ps.length > 1 || ps.some(function (x) { return noteOf(id, x); }))
+        ? ps.map(function (o, i) { return (i + 1) + '. ' + titleOf(o) + ' (' + plan.num[o].replace(/\.$/, '') + ')' + (noteOf(id, o) ? ': ' + one(noteOf(id, o)) : ''); })
+        : [];
+      if (depth < 5) {
+        out.push('#'.repeat(depth + 2) + ' ' + num + ' ' + t, '');
+        if (n.meaning.trim()) out.push(n.meaning.trim(), '');
+        if (n.practice.trim()) out.push('**How we live it:** ' + n.practice.trim(), '');
+        if (n.avoid.trim()) out.push('**Not this:** ' + n.avoid.trim(), '');
+        if (shaped.length) out.push('**Shaped by:**', '', shaped.join('\n'), '');
+      } else {
+        out.push('  '.repeat(depth - 5) + '- **' + num + ' ' + t + '**' + (n.meaning.trim() ? ': ' + one(n.meaning) : '') +
+          (n.practice.trim() ? ' *How we live it:* ' + one(n.practice) : '') + (n.avoid.trim() ? ' *Not this:* ' + one(n.avoid) : '') +
+          (shaped.length ? ' *Shaped by:* ' + shaped.map(function (s) { return s.replace(/^\d+\. /, ''); }).join('; ') : ''));
+      }
+      n.children.forEach(function (c) {
+        if (plan.home[c] === id) walk(c, depth + 1);
+        else out.push((depth >= 5 ? '  '.repeat(depth - 4) + '- ' : '') + '*Also includes ' + plan.num[c] + ' ' + titleOf(c) + '.*', '');
+      });
+    }
+    state.roots.forEach(function (r) { walk(r, 0); });
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  }
+
+  function openExport() {
+    var fmt = 'json';
+    function text() { return fmt === 'json' ? JSON.stringify(exportData(), null, 2) : toMarkdown(); }
+    openModal(
+      '<h2 id="modal-title">Export your tree</h2>' +
+      '<p>The JSON file holds the full tree, including values with more than one parent, so you can import it here later or keep it as a backup. Markdown gives you a readable document to paste into a doc or email.</p>' +
+      '<div class="seg" role="group" aria-label="Format"><button type="button" data-fmt="json" aria-pressed="true">Tree file (JSON)</button><button type="button" data-fmt="md" aria-pressed="false">Readable document (Markdown)</button></div>' +
+      '<label for="export-text" class="eyebrow">Contents</label><textarea id="export-text" readonly></textarea>' +
+      '<div class="actions"><button type="button" class="btn" data-m="close">Close</button><button type="button" class="btn" data-m="copy">Copy</button>' +
+      '<button type="button" class="btn primary" data-m="download" data-autofocus' + (downloadsApi ? '' : ' hidden') + '>Download file</button></div>',
+      function (m) {
+        var ta = $('#export-text', m);
+        ta.value = text();
+        if (!downloadsApi) { var c = $('[data-m="copy"]', m); c.classList.add('primary'); c.setAttribute('data-autofocus', ''); }
+        m.onclick = function (ev) {
+          var f = ev.target.closest('[data-fmt]');
+          if (f) {
+            fmt = f.dataset.fmt; ta.value = text();
+            m.querySelectorAll('[data-fmt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === f)); });
+            return;
+          }
+          var b = ev.target.closest('[data-m]'); if (!b) return;
+          var a = b.dataset.m;
+          if (a === 'close') closeModal();
+          else if (a === 'copy') {
+            var p = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(ta.value) : Promise.reject();
+            p.then(function () { toast('Copied to your clipboard'); }, function () { ta.focus(); ta.select(); toast('Press Ctrl+C (or Cmd+C) to copy the selected text'); });
+          } else if (a === 'download' && downloadsApi) {
+            var name = slug(state.title) + (fmt === 'json' ? '.json' : '.md');
+            downloadsApi.save({ filename: name, data: ta.value }).then(function () { toast('Downloaded ' + name); }, function (err) {
+              var code = err && err.code;
+              if (code === 'declined') return;
+              if (code === 'rate_limited') toast('A download prompt is already open. Try again in a moment.');
+              else toast('Download isn’t available here. Use Copy instead.');
+            });
+          }
+        };
+      });
+  }
+
+  function openImport() {
+    openModal(
+      '<h2 id="modal-title">Import a tree</h2>' +
+      '<p>Choose a tree file you exported earlier, or paste its contents below. Importing replaces the current tree; you can undo it.</p>' +
+      '<div class="field"><label for="import-file">Tree file (.json)</label><input type="file" id="import-file" accept=".json,application/json,text/plain"></div>' +
+      '<div class="field"><label for="import-text">Or paste the JSON</label><textarea id="import-text" placeholder="{ &quot;format&quot;: &quot;family-values-tree&quot;, ... }"></textarea></div>' +
+      '<p class="error" id="import-error" hidden></p>' +
+      '<div class="actions"><button type="button" class="btn" data-m="cancel">Cancel</button><button type="button" class="btn primary" data-m="import">Replace current tree</button></div>',
+      function (m) {
+        var ta = $('#import-text', m), err = $('#import-error', m);
+        function showErr(msg) { err.textContent = msg; err.hidden = false; }
+        $('#import-file', m).onchange = function (ev) {
+          var file = ev.target.files && ev.target.files[0]; if (!file) return;
+          var r = new FileReader();
+          r.onload = function () { ta.value = String(r.result || ''); err.hidden = true; };
+          r.onerror = function () { showErr('That file couldn’t be read. Try pasting its contents instead.'); };
+          r.readAsText(file);
+        };
+        m.onclick = function (ev) {
+          var b = ev.target.closest('[data-m]'); if (!b) return;
+          if (b.dataset.m === 'cancel') { closeModal(); return; }
+          var raw = ta.value.trim();
+          if (!raw) { showErr('Choose a file or paste the JSON first.'); return; }
+          var parsed;
+          try { parsed = JSON.parse(raw); } catch (e) { showErr('This isn’t valid JSON. Check that you copied the whole file, including the first { and last }.'); return; }
+          var ok = Array.isArray(parsed) || (parsed && (Array.isArray(parsed.roots) || (parsed.nodes && typeof parsed.nodes === 'object')));
+          if (!ok) { showErr('This JSON doesn’t look like a values tree. It needs a "roots" list.'); return; }
+          var next = normalize(parsed);
+          closeModal();
+          commit(function () { next.rev = state.rev; state = next; selectedKey = null; selectedId = null; });
+          toast('Imported ' + Object.keys(state.nodes).length + ' values');
+        };
+      });
+  }
+
+  /* ---------- Saving (writes this page) ---------- */
+  function buildDocument(s) {
+    var css = $('#app-css').textContent;
+    var js = $('#app-js').textContent;
+    var data = JSON.stringify(s).replace(/</g, '\\u003c');
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' + HEAD + '\n<style id="app-css">' + css + '</style>\n</head>\n<body>\n<div id="app"></div>\n' +
+      '<script type="application/json" id="tree-data">' + data + '<\/script>\n' +
+      '<script id="app-js">' + js + '<\/script>\n</body>\n</html>\n';
+  }
+
+  function updateSaveUI() {
+    var btn = $('#btn-save'), st = $('#save-status');
+    st.classList.remove('dirty');
+    if (artifactApi === undefined) { btn.hidden = true; st.textContent = ''; return; }
+    if (artifactApi === null) {
+      btn.hidden = true;
+      st.textContent = dirty ? 'Changes aren’t saved in this view. Export to keep them.' : '';
+      return;
+    }
+    if (readOnly) { btn.hidden = true; st.textContent = 'View only. Export to keep your own copy.'; return; }
+    btn.hidden = false;
+    if (saving) { btn.disabled = true; btn.textContent = 'Saving…'; st.textContent = ''; return; }
+    btn.disabled = !dirty;
+    btn.textContent = dirty ? 'Save changes' : 'Saved';
+    if (dirty) { st.textContent = 'Unsaved changes'; st.classList.add('dirty'); } else st.textContent = '';
+  }
+
+  function stash(extra) {
+    try {
+      var tp = $('#tree-pane');
+      sessionStorage.setItem(STASH_KEY, JSON.stringify(Object.assign({ selectedKey: selectedKey, view: view, zoom: zoom, sx: tp.scrollLeft, sy: tp.scrollTop }, extra || {})));
+    } catch (e) {}
+  }
+
+  function save() {
+    if (!artifactApi || saving || readOnly || !dirty) return;
+    saving = true; updateSaveUI();
+    clearTimeout(draftTimer); writeDraft();
+    stash({ justSaved: true });
+    var next = JSON.parse(snap()); next.rev = (state.rev || 0) + 1;
+    artifactApi.publish(buildDocument(next)).then(function () {
+      dirty = false; saving = false; updateSaveUI(); toast('Saved');
+    }, function (err) {
+      saving = false;
+      stash();
+      var code = err && err.code;
+      if (code === 'conflict') toast('Someone else saved a newer version. Loading it now; your changes stay in this browser so you can restore them.');
+      else if (code === 'not_writer' || code === 'not_granted' || code === 'not_declared' || code === 'capability_disabled' || code === 'capability_removed' || code === 'consent_required') { readOnly = true; toast('This view can’t save. Export a copy to keep your changes.'); }
+      else if (code === 'rate_limited') toast('Saving too often. Try again in a moment.');
+      else toast('Couldn’t save just now. Your changes are still here; try again or export a copy.');
+      updateSaveUI();
+    });
+  }
+
+  /* ---------- Events ---------- */
+  var forest = $('#forest');
+  forest.addEventListener('click', function (ev) {
+    var t = ev.target;
+    var fold = t.closest('[data-fold]'); if (fold) { toggleFold(fold.dataset.fold); return; }
+    var add = t.closest('[data-add-child]'); if (add) { addChild(add.dataset.addChild); return; }
+    var card = t.closest('.card'); if (card) { selectKey(card.dataset.key, true); return; }
+    if (t.closest('[data-act]')) return;
+    if (selectedKey) { selectedKey = null; selectedId = null; render(); }
+  });
+  forest.addEventListener('dblclick', function (ev) {
+    var card = ev.target.closest('.card'); if (card) { selectKey(card.dataset.key); focusTitle(); }
+  });
+  forest.addEventListener('keydown', function (ev) {
+    var card = ev.target.closest('.card'); if (!card) return;
+    var key = card.dataset.key, k = ev.key;
+    if (ev.ctrlKey || ev.metaKey) return;
+    if (selectedKey !== key) { selectedKey = key; selectedId = card.dataset.id; }
+    if (k === 'Enter') { ev.preventDefault(); selectKey(key); focusTitle(); }
+    else if (k === 'c' || k === 'C') { ev.preventDefault(); addChild(key); }
+    else if (k === 'n' || k === 'N') { ev.preventDefault(); addSibling(key); }
+    else if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); askDelete(key); }
+    else if (ev.altKey && (k === 'ArrowUp' || k === 'ArrowDown')) { ev.preventDefault(); move(key, k === 'ArrowUp' ? -1 : 1); focusCard(selectedKey); }
+    else if (k.indexOf('Arrow') === 0) { ev.preventDefault(); navigate(k); }
+  });
+
+  // Drag a card onto another card to move it underneath; hold Alt/Option to connect it there too.
+  var dragKey = null;
+  function clearDrop() { document.querySelectorAll('.drop, .drop-link').forEach(function (el) { el.classList.remove('drop', 'drop-link'); }); }
+  forest.addEventListener('dragstart', function (ev) {
+    var c = ev.target.closest && ev.target.closest('.card'); if (!c) return;
+    dragKey = c.dataset.key;
+    ev.dataTransfer.effectAllowed = 'linkMove';
+    try { ev.dataTransfer.setData('text/plain', c.dataset.id); } catch (e) {}
+    document.body.classList.add('dragging');
+  });
+  forest.addEventListener('dragover', function (ev) {
+    if (!dragKey) return;
+    var src = placements.get(dragKey); if (!src) return;
+    var c = ev.target.closest('.card'), z = ev.target.closest('[data-root-drop]');
+    var ok = (c && c.dataset.id !== src.id && noLoop(src.id, c.dataset.id)) || (z && src.depth > 0);
+    if (!ok) return;
+    ev.preventDefault();
+    var linking = !!(c && ev.altKey);
+    ev.dataTransfer.dropEffect = linking ? 'link' : 'move';
+    var el = c || z;
+    var cls = linking ? 'drop-link' : 'drop';
+    if (!el.classList.contains(cls)) { clearDrop(); el.classList.add(cls); }
+  });
+  forest.addEventListener('dragleave', function (ev) {
+    var el = ev.target.closest('.card, [data-root-drop]');
+    if (el && !el.contains(ev.relatedTarget)) el.classList.remove('drop', 'drop-link');
+  });
+  forest.addEventListener('drop', function (ev) {
+    if (!dragKey) return;
+    ev.preventDefault();
+    var c = ev.target.closest('.card'), z = ev.target.closest('[data-root-drop]');
+    var key = dragKey; dragKey = null;
+    document.body.classList.remove('dragging'); clearDrop();
+    var src = placements.get(key); if (!src) return;
+    if (c && ev.altKey) link(src.id, c.dataset.id);
+    else if (c) moveTo(key, c.dataset.id);
+    else if (z) moveTo(key, null);
+  });
+  forest.addEventListener('dragend', function () { dragKey = null; document.body.classList.remove('dragging'); clearDrop(); });
+
+  $('#docview').addEventListener('click', function (ev) {
+    var h = ev.target.closest('[data-sel]'); if (h) selectKey(h.dataset.sel);
+  });
+
+  // Field editing (panel + header title)
+  function fieldTarget(el) {
+    if (!el || !el.dataset || !el.dataset.field) return null;
+    if (el.dataset.scope === 'tree') return state;
+    return selectedId ? node(selectedId) : null;
+  }
+  document.addEventListener('focusin', function (ev) { if (fieldTarget(ev.target)) editSnap = snap(); });
+  document.addEventListener('input', function (ev) {
+    var el = ev.target, obj = fieldTarget(el); if (!obj) return;
+    if (editSnap) { pushUndo(editSnap); editSnap = null; }
+    if (el.dataset.field === 'note') { if (!obj.notes) obj.notes = {}; if (el.value) obj.notes[el.dataset.parent] = el.value; else delete obj.notes[el.dataset.parent]; }
+    else obj[el.dataset.field] = el.value;
+    if (state.example) { state.example = false; renderBanner(); }
+    markDirty();
+    $('#btn-undo').disabled = false; $('#btn-redo').disabled = true;
+    if (view === 'tree') renderTree(); else renderDoc();
+  });
+  document.addEventListener('focusout', function (ev) {
+    if (ev.target && ev.target.id === 'doc-title' && !state.title.trim()) { state.title = 'Our Family Values'; ev.target.value = state.title; }
+  });
+
+  $('#panel').addEventListener('keydown', function (ev) {
+    if (ev.target.id === 'f-title' && (ev.key === 'Enter' || ev.key === 'Escape')) {
+      ev.preventDefault();
+      if (selectedKey && view === 'tree') focusCard(selectedKey);
+    }
+  });
+  $('#panel').addEventListener('change', function (ev) {
+    var v = ev.target.value;
+    if (!v || !selectedKey) return;
+    if (ev.target.id === 'f-move') { moveTo(selectedKey, v === '__root' ? null : v); focusCard(selectedKey); }
+    else if (ev.target.id === 'f-link') { link(selectedId, v); }
+  });
+
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('[data-act]');
+    if (a && !a.disabled) {
+      var act = a.dataset.act;
+      if (act === 'add-root') addRoot();
+      else if (act === 'add-child') addChild(selectedKey);
+      else if (act === 'add-sibling') addSibling(selectedKey);
+      else if (act === 'up') move(selectedKey, -1);
+      else if (act === 'down') move(selectedKey, 1);
+      else if (act === 'out') moveOut(selectedKey);
+      else if (act === 'in') moveIn(selectedKey);
+      else if (act === 'unlink') unlink(selectedId, a.dataset.parent);
+      else if (act === 'rank') rerank(selectedId, a.dataset.parent, Number(a.dataset.dir));
+      else if (act === 'delete') askDelete(selectedKey);
+      else if (act === 'deselect') { var k = selectedKey; selectedKey = null; selectedId = null; render(); if (k) focusCard(k); }
+      else if (act === 'start-blank') askStartBlank();
+      else if (act === 'restore-draft' && pendingDraft) {
+        var d = pendingDraft; pendingDraft = null;
+        commit(function () { var rev = state.rev; state = normalize(JSON.parse(d.data)); state.rev = rev; selectedKey = null; selectedId = null; });
+        toast('Your unsaved changes are back');
+      }
+      else if (act === 'discard-draft') { pendingDraft = null; clearDraft(); renderBanner(); }
+      return;
+    }
+    var s = ev.target.closest('#panel [data-sel]');
+    if (s) selectKey(s.dataset.sel, true);
+    var v = ev.target.closest('[data-view]');
+    if (v) { view = v.dataset.view; render(); if (view === 'tree' && selectedKey) focusCard(selectedKey); }
+    var z = ev.target.closest('[data-zoom]');
+    if (z) { zoom = Math.min(1.5, Math.max(0.4, Math.round((zoom + 0.1 * Number(z.dataset.zoom)) * 10) / 10)); renderTree(); }
+  });
+
+  $('#btn-undo').onclick = undo;
+  $('#btn-redo').onclick = redo;
+  $('#btn-import').onclick = openImport;
+  $('#btn-export').onclick = openExport;
+  $('#btn-save').onclick = save;
+  $('#modal-root').addEventListener('mousedown', function (ev) { if (ev.target.id === 'modal-root') closeModal(); });
+
+  document.addEventListener('keydown', function (ev) {
+    if (!$('#modal-root').hidden) { if (ev.key === 'Escape') { ev.preventDefault(); closeModal(); } return; }
+    var mod = ev.ctrlKey || ev.metaKey;
+    if (!mod) return;
+    var k = ev.key.toLowerCase();
+    if (k === 's') { ev.preventDefault(); save(); return; }
+    var inText = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
+    if (inText) return;
+    if (k === 'z' && !ev.shiftKey) { ev.preventDefault(); undo(); }
+    else if ((k === 'z' && ev.shiftKey) || k === 'y') { ev.preventDefault(); redo(); }
+  });
+
+  /* ---------- Startup ---------- */
+  (function startup() {
+    var st = null;
+    try { st = JSON.parse(sessionStorage.getItem(STASH_KEY) || 'null'); sessionStorage.removeItem(STASH_KEY); } catch (e) {}
+    var draft = null;
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+    if (st && st.justSaved) { clearDraft(); draft = null; }
+    if (draft && typeof draft.data === 'string') {
+      try {
+        var dc = normalize(JSON.parse(draft.data)); dc.rev = 0; dc.example = false;
+        if (JSON.stringify(dc) !== content()) pendingDraft = draft; else clearDraft();
+      } catch (e) { clearDraft(); }
+    }
+    if (st) {
+      if (typeof st.selectedKey === 'string') selectedKey = st.selectedKey;
+      if (st.view === 'doc' || st.view === 'tree') view = st.view;
+      if (typeof st.zoom === 'number') zoom = st.zoom;
+    }
+    render();
+    if (st) { var tp = $('#tree-pane'); tp.scrollLeft = st.sx || 0; tp.scrollTop = st.sy || 0; }
+  })();
+
+  function getCap(name) {
+    return (async function () {
+      for (var i = 0; i < 30 && !(window.claude && window.claude.use); i++) await sleep(100);
+      if (!(window.claude && window.claude.use)) return null;
+      try { return await window.claude.use(name); } catch (e) { return null; }
+    })();
+  }
+  getCap('artifact').then(function (a) { artifactApi = a || null; updateSaveUI(); });
+  getCap('downloads').then(function (d) { downloadsApi = d || null; });
+})();
+</script>
+</body>
+</html>

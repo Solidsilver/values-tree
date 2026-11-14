@@ -1,0 +1,281 @@
+{
+  "format": "family-values-tree",
+  "version": 2,
+  "title": "Sample Family Values",
+  "intro": "",
+  "example": false,
+  "rev": 3,
+  "roots": [
+    "s00kindness"
+  ],
+  "nodes": {
+    "s00kindness": {
+      "id": "s00kindness",
+      "title": "Kindness",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s01home",
+        "s02neighbou",
+        "s03work",
+        "s04learning",
+        "s05play"
+      ]
+    },
+    "s01home": {
+      "id": "s01home",
+      "title": "Home",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s06mealstog",
+        "s07chores",
+        "s10pets",
+        "s12welcomin"
+      ]
+    },
+    "s02neighbou": {
+      "id": "s02neighbou",
+      "title": "Neighbours",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s11helpingo",
+        "s14streetpa"
+      ]
+    },
+    "s03work": {
+      "id": "s03work",
+      "title": "Work",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s15craft",
+        "s16effort",
+        "s17saving",
+        "s18school"
+      ]
+    },
+    "s04learning": {
+      "id": "s04learning",
+      "title": "Learning",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s18school",
+        "s16effort",
+        "s08garden",
+        "s23boardgam"
+      ]
+    },
+    "s05play": {
+      "id": "s05play",
+      "title": "Play",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s23boardgam",
+        "s24sport",
+        "s25makingmu",
+        "s27drawing",
+        "s21naturewa"
+      ]
+    },
+    "s06mealstog": {
+      "id": "s06mealstog",
+      "title": "Meals together",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s07chores": {
+      "id": "s07chores",
+      "title": "Chores",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s08garden",
+        "s09repairs"
+      ]
+    },
+    "s08garden": {
+      "id": "s08garden",
+      "title": "Garden",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s09repairs": {
+      "id": "s09repairs",
+      "title": "Repairs",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s10pets": {
+      "id": "s10pets",
+      "title": "Pets",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s11helpingo": {
+      "id": "s11helpingo",
+      "title": "Helping out",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s12welcomin",
+        "s13lendingt"
+      ]
+    },
+    "s12welcomin": {
+      "id": "s12welcomin",
+      "title": "Welcoming guests",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s13lendingt": {
+      "id": "s13lendingt",
+      "title": "Lending tools",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s14streetpa": {
+      "id": "s14streetpa",
+      "title": "Street party",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s15craft": {
+      "id": "s15craft",
+      "title": "Craft",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s16effort": {
+      "id": "s16effort",
+      "title": "Effort",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s17saving": {
+      "id": "s17saving",
+      "title": "Saving",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s18school": {
+      "id": "s18school",
+      "title": "School",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s19reading",
+        "s20maths",
+        "s22language"
+      ]
+    },
+    "s19reading": {
+      "id": "s19reading",
+      "title": "Reading",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s20maths": {
+      "id": "s20maths",
+      "title": "Maths",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s21naturewa"
+      ]
+    },
+    "s21naturewa": {
+      "id": "s21naturewa",
+      "title": "Nature walks",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s22language": {
+      "id": "s22language",
+      "title": "Languages",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s23boardgam": {
+      "id": "s23boardgam",
+      "title": "Board games",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s24sport": {
+      "id": "s24sport",
+      "title": "Sport",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s25makingmu": {
+      "id": "s25makingmu",
+      "title": "Making music",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": [
+        "s26singing"
+      ]
+    },
+    "s26singing": {
+      "id": "s26singing",
+      "title": "Singing",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    },
+    "s27drawing": {
+      "id": "s27drawing",
+      "title": "Drawing",
+      "meaning": "",
+      "practice": "",
+      "collapsed": false,
+      "children": []
+    }
+  }
+}

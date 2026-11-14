@@ -1,0 +1,15 @@
+services:
+  values-tree:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - values-tree-data:/data
+    environment:
+      # Change this to your public HTTPS origin (also used behind Caddy).
+      ORIGIN: "${ORIGIN:-https://values.example.com}"
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+volumes:
+  values-tree-data:

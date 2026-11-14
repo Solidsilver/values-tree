@@ -1,0 +1,18 @@
+node_modules
+/build
+/.svelte-kit
+/data
+/test-results
+/playwright-report
+.env
+.env.*
+!.env.example
+.DS_Store
+vite.config.ts.timestamp-*
+/.playwright-mcp
+/result
+/result-*
+
+# Private: the owner's real tree, the original artifact with its data, and pre-public history
+/seed/
+/private/

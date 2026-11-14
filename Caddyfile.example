@@ -1,0 +1,28 @@
+# Replace this hostname and set the same ORIGIN in docker-compose.yml / .env.
+values.example.com {
+	# Includes /ws/*: Caddy forwards WebSocket upgrades automatically.
+	reverse_proxy 127.0.0.1:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		X-Frame-Options DENY
+		# Keep the application's Content-Security-Policy intact.
+	}
+	@private path /e/* /v/* /ws/* /api/*
+	header @private Cache-Control no-store
+
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp "^(/(?:e|v|ws|api/trees)/)[^/?]+" "${1}REDACTED"
+				# A supplied Referer or response Location could also contain a link.
+				request>headers>Referer delete
+				resp_headers>Location delete
+			}
+		}
+	}
+}
