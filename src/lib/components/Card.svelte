@@ -281,14 +281,14 @@
 	}
 	.card.root {
 		width: 268px;
-		padding: 14px 16px 15px 19px;
-		background: color-mix(in srgb, var(--hue) 9%, var(--surface));
-		border-color: color-mix(in srgb, var(--hue) 45%, var(--line));
+		padding: 14px 16px 15px 20px;
+		background: color-mix(in srgb, var(--hue) 8.5%, var(--surface));
+		border-color: color-mix(in srgb, var(--hue) 44%, var(--line));
 		border-width: 1.5px;
 	}
 	.card.root::before {
-		top: 0;
-		bottom: 0;
+		top: -1.5px;
+		bottom: -1.5px;
 		width: 6px;
 		left: -1.5px;
 		border-radius: var(--r) 0 0 var(--r);
@@ -383,7 +383,8 @@
 		font-size: var(--t-xs);
 		font-weight: 520;
 		color: var(--ink-2);
-		background: color-mix(in srgb, var(--hue) 11%, var(--paper));
+		background: color-mix(in srgb, var(--hue) 10%, var(--paper));
+		border: 1px solid color-mix(in srgb, var(--hue) 18%, transparent);
 		border-radius: 999px;
 		padding: 2px 9px 2px 7px;
 	}
@@ -393,13 +394,21 @@
 	.card.selected {
 		border-color: var(--accent);
 		box-shadow:
-			0 0 0 2px var(--accent),
+			0 0 0 1.5px var(--accent),
+			0 0 0 4.5px color-mix(in srgb, var(--accent) 16%, transparent),
+			var(--shadow-lift);
+	}
+	.card.shared.selected {
+		border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+		box-shadow:
+			0 0 0 2px var(--paper),
+			0 0 0 4px var(--accent),
 			var(--shadow-lift);
 	}
 	.card.also-selected {
 		box-shadow:
 			0 0 0 2px var(--paper),
-			0 0 0 3.5px color-mix(in srgb, var(--accent) 55%, transparent);
+			0 0 0 3.5px color-mix(in srgb, var(--accent) 52%, transparent);
 	}
 	.card:focus-visible {
 		box-shadow:
@@ -409,13 +418,15 @@
 	}
 	.card.has-peers:not(.selected) {
 		box-shadow:
-			0 0 0 2px var(--peer),
+			0 0 0 2px var(--paper),
+			0 0 0 4px var(--peer),
 			var(--shadow);
 	}
 	.card.has-peers.selected {
 		box-shadow:
 			0 0 0 2px var(--accent),
-			0 0 0 5px var(--peer);
+			0 0 0 4px var(--paper),
+			0 0 0 6px var(--peer);
 	}
 	.peer-tags {
 		position: absolute;
@@ -429,12 +440,15 @@
 		font-weight: 600;
 		line-height: 1;
 		color: #fff;
-		padding: 4px 7px;
+		padding: 4px 8px;
 		border-radius: 999px;
 		max-width: 110px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		box-shadow:
+			0 1px 4px rgb(0 0 0 / 0.16),
+			0 0 0 1.5px var(--paper);
 	}
 	.card.drop-move {
 		transform: scale(1.025);
@@ -450,7 +464,7 @@
 			var(--shadow-lift);
 	}
 	.card.dragging {
-		opacity: 0.5;
+		opacity: 0.45;
 	}
 	.fold {
 		position: absolute;
@@ -465,21 +479,27 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 999px;
-		border: 1.5px solid color-mix(in srgb, var(--hue) 55%, var(--line));
+		border: 1.5px solid color-mix(in srgb, var(--hue) 52%, var(--line));
 		background: var(--surface);
+		box-shadow: 0 1px 3px rgb(40 32 16 / 0.1);
 		font-size: 12px;
 		font-weight: 650;
 		font-variant-numeric: tabular-nums;
 		color: var(--ink);
+		transition:
+			background-color 0.14s var(--ease),
+			border-color 0.14s var(--ease),
+			transform 0.14s var(--ease);
 	}
 	.fold:hover {
 		background: color-mix(in srgb, var(--hue) 14%, var(--surface));
+		border-color: var(--hue);
+		transform: translateY(-50%) scale(1.06);
 	}
 	.add-child {
 		position: absolute;
-		left: 50%;
+		right: 12px;
 		bottom: -12px;
-		transform: translateX(-50%);
 		z-index: 2;
 		width: 24px;
 		height: 24px;
@@ -487,11 +507,19 @@
 		place-items: center;
 		padding: 0;
 		border-radius: 50%;
-		border: 0;
+		border: 2px solid var(--paper);
 		background: var(--accent);
 		color: var(--accent-ink);
+		box-shadow: var(--shadow);
 		opacity: 0;
-		transition: opacity 0.12s;
+		transition:
+			opacity 0.14s var(--ease),
+			transform 0.14s var(--ease),
+			background-color 0.14s var(--ease);
+	}
+	.add-child:hover {
+		transform: scale(1.1);
+		background: color-mix(in srgb, var(--accent) 88%, var(--ink));
 	}
 	.node-wrap:hover .add-child,
 	.card.selected ~ .add-child {
@@ -499,9 +527,10 @@
 	}
 	@media (pointer: coarse) {
 		.card.selected ~ .add-child {
-			width: 36px;
-			height: 36px;
-			bottom: -18px;
+			width: 34px;
+			height: 34px;
+			right: 10px;
+			bottom: -17px;
 		}
 		.fold {
 			min-width: 34px;

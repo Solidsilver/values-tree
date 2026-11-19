@@ -127,25 +127,46 @@
 			</div>
 
 			<figure class="sketch" aria-hidden="true">
-				<svg viewBox="0 0 420 300">
-					<g fill="none" stroke-linecap="round" stroke-width="2.4" opacity="0.6">
-						<path d="M128 78 C170 78, 172 40, 214 40" stroke="var(--b1)" />
-						<path d="M128 78 C170 78, 172 116, 214 116" stroke="var(--b1)" />
-						<path d="M128 222 C170 222, 172 186, 214 186" stroke="var(--b2)" />
-						<path d="M128 222 C170 222, 172 258, 214 258" stroke="var(--b2)" />
-						<path d="M128 78 C175 78, 160 186, 214 186" stroke="var(--b1)" stroke-dasharray="1 6" />
+				<svg viewBox="0 0 368 296">
+					<defs>
+						<clipPath id="hero-root-1"><rect x="12" y="48" width="118" height="56" rx="9" /></clipPath>
+						<clipPath id="hero-root-2"><rect x="12" y="192" width="118" height="56" rx="9" /></clipPath>
+					</defs>
+					<g fill="none" stroke-linecap="round" stroke-width="2.2" opacity="0.62">
+						<path d="M138 76 C174 76, 174 36, 212 36" stroke="var(--b1)" />
+						<path d="M138 76 C174 76, 174 112, 212 112" stroke="var(--b1)" />
+						<path d="M138 220 C174 220, 174 184, 212 184" stroke="var(--b2)" />
+						<path d="M138 220 C174 220, 174 256, 212 256" stroke="var(--b2)" />
+						<path d="M138 76 C182 76, 162 184, 212 184" stroke="var(--b1)" stroke-dasharray="1.5 6" stroke-width="1.8" opacity="0.72" />
 					</g>
 					<g>
-						<rect x="20" y="56" width="108" height="44" rx="9" fill="color-mix(in srgb, var(--b1) 10%, var(--surface))" stroke="color-mix(in srgb, var(--b1) 45%, var(--line))" stroke-width="1.5" />
-						<rect x="20" y="56" width="6" height="44" rx="3" fill="var(--b1)" />
-						<text x="40" y="84" class="t root">Love</text>
-						<rect x="20" y="200" width="108" height="44" rx="9" fill="color-mix(in srgb, var(--b2) 10%, var(--surface))" stroke="color-mix(in srgb, var(--b2) 45%, var(--line))" stroke-width="1.5" />
-						<rect x="20" y="200" width="6" height="44" rx="3" fill="var(--b2)" />
-						<text x="40" y="228" class="t root">Honesty</text>
-						{#each [{ y: 22, t: 'Kindness', h: 'var(--b1)' }, { y: 98, t: 'Hospitality', h: 'var(--b1)' }, { y: 168, t: 'Forgiveness', h: 'var(--b2)', d: true }, { y: 240, t: 'Promises', h: 'var(--b2)' }] as c (c.t)}
-							<rect x="214" y={c.y} width="116" height="36" rx="8" fill="var(--surface)" stroke="color-mix(in srgb, {c.h} 25%, var(--line))" stroke-dasharray={c.d ? '4 3' : undefined} />
-							<rect x="214" y={c.y + 9} width="3" height="18" rx="1.5" fill={c.h} />
-							<text x="228" y={c.y + 23} class="t">{c.t}</text>
+						<!-- Root: Love -->
+						<rect x="12" y="48" width="118" height="56" rx="9" fill="color-mix(in srgb, var(--b1) 9%, var(--surface))" stroke="color-mix(in srgb, var(--b1) 45%, var(--line))" stroke-width="1.5" />
+						<rect x="11" y="47" width="7" height="58" fill="var(--b1)" clip-path="url(#hero-root-1)" />
+						<text x="30" y="74" class="t root">Love</text>
+						<rect x="30" y="84" width="76" height="4" rx="2" fill="var(--muted)" opacity="0.28" />
+						<circle cx="130" cy="76" r="8" fill="var(--surface)" stroke="color-mix(in srgb, var(--b1) 55%, var(--line))" stroke-width="1.4" />
+						<path d="M126.5 76h7" stroke="var(--ink-2)" stroke-width="1.5" stroke-linecap="round" />
+
+						<!-- Root: Honesty -->
+						<rect x="12" y="192" width="118" height="56" rx="9" fill="color-mix(in srgb, var(--b2) 9%, var(--surface))" stroke="color-mix(in srgb, var(--b2) 45%, var(--line))" stroke-width="1.5" />
+						<rect x="11" y="191" width="7" height="58" fill="var(--b2)" clip-path="url(#hero-root-2)" />
+						<text x="30" y="218" class="t root">Honesty</text>
+						<rect x="30" y="228" width="68" height="4" rx="2" fill="var(--muted)" opacity="0.28" />
+						<circle cx="130" cy="220" r="8" fill="var(--surface)" stroke="color-mix(in srgb, var(--b2) 55%, var(--line))" stroke-width="1.4" />
+						<path d="M126.5 220h7" stroke="var(--ink-2)" stroke-width="1.5" stroke-linecap="round" />
+
+						<!-- Child values -->
+						{#each [{ y: 12, t: 'Kindness', h: 'var(--b1)', w: 82 }, { y: 88, t: 'Hospitality', h: 'var(--b1)', w: 72 }, { y: 160, t: 'Forgiveness', h: 'var(--b2)', d: true, w: 88 }, { y: 232, t: 'Promises', h: 'var(--b2)', w: 66 }] as c (c.t)}
+							<rect x="212" y={c.y} width="144" height="48" rx="9" fill="var(--surface)" stroke="color-mix(in srgb, {c.h} 26%, var(--line))" stroke-dasharray={c.d ? '4 3' : undefined} />
+							<rect x="212" y={c.y + 10} width="3" height="28" rx="1.5" fill={c.h} opacity="0.88" />
+							<text x="226" y={c.y + 24} class="t">{c.t}</text>
+							{#if c.d}
+								<rect x="226" y={c.y + 31} width="84" height="10" rx="5" fill="color-mix(in srgb, var(--b1) 14%, var(--paper))" />
+								<rect x="233" y={c.y + 34.5} width="54" height="3" rx="1.5" fill="var(--b1)" opacity="0.55" />
+							{:else}
+								<rect x="226" y={c.y + 33} width={c.w} height="3.5" rx="1.75" fill="var(--muted)" opacity="0.26" />
+							{/if}
 						{/each}
 					</g>
 				</svg>
@@ -169,7 +190,7 @@
 									{#if r.unsaved}<span class="warn">Edit link not saved yet</span>{/if}
 								</span>
 							</a>
-							<button type="button" class="btn quiet small" aria-label="Forget {r.title || 'this tree'} on this device" onclick={() => remove(r)}>Forget</button>
+							<button type="button" class="btn quiet small forget" aria-label="Forget {r.title || 'this tree'} on this device" onclick={() => remove(r)}>Forget</button>
 						</li>
 					{/each}
 				</ul>
@@ -197,7 +218,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 18px clamp(16px, 4vw, 48px);
+		width: 100%;
+		max-width: 1120px;
+		margin: 0 auto;
+		padding: 20px clamp(16px, 4vw, 48px) 12px;
 	}
 	.brand {
 		display: inline-flex;
@@ -213,43 +237,44 @@
 		width: 100%;
 		max-width: 1120px;
 		margin: 0 auto;
-		padding: clamp(16px, 5vw, 56px) clamp(16px, 4vw, 48px) 48px;
+		padding: clamp(20px, 5vw, 56px) clamp(16px, 4vw, 48px) 48px;
 		display: flex;
 		flex-direction: column;
-		gap: clamp(48px, 8vw, 88px);
+		gap: clamp(48px, 7vw, 80px);
 	}
 	.hero {
 		display: grid;
-		grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-		gap: 48px;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+		gap: clamp(32px, 5vw, 60px);
 		align-items: center;
 	}
 	.intro {
 		display: flex;
 		flex-direction: column;
-		gap: 22px;
+		gap: 20px;
 		animation: enter 0.5s var(--ease);
 	}
 	h1 {
-		font-size: clamp(34px, 5.2vw, 58px);
-		line-height: 1.03;
+		font-size: clamp(34px, 5vw, 56px);
+		line-height: 1.04;
 		font-variation-settings: 'opsz' 144;
 		font-weight: 520;
 		letter-spacing: -0.02em;
 	}
 	.lede {
 		font-size: var(--t-lg);
-		line-height: 1.55;
+		line-height: 1.56;
 		color: var(--ink-2);
-		max-width: 50ch;
+		max-width: 48ch;
 	}
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 10px;
+		margin-top: 4px;
 	}
 	.big {
-		min-height: 48px;
+		min-height: 46px;
 		padding: 10px 22px;
 		font-size: var(--t-md);
 	}
@@ -260,14 +285,20 @@
 		gap: 10px;
 		align-self: flex-start;
 		padding: 10px 16px;
-		border: 1.5px dashed var(--line-strong);
+		border: 1.5px dashed color-mix(in srgb, var(--line-strong) 85%, transparent);
 		border-radius: var(--r);
+		background: color-mix(in srgb, var(--surface) 42%, transparent);
 		color: var(--ink-2);
 		font-weight: 520;
 		font-size: var(--t-sm);
 		cursor: pointer;
+		transition:
+			border-color 0.14s var(--ease),
+			background-color 0.14s var(--ease),
+			color 0.14s var(--ease);
 	}
 	.import .sub {
+		display: inline;
 		font-weight: 400;
 		color: var(--muted);
 	}
@@ -275,6 +306,7 @@
 	.import.dragging {
 		border-color: var(--accent);
 		background: var(--accent-soft);
+		color: var(--ink);
 	}
 	.import:focus-within {
 		outline: 2px solid var(--focus);
@@ -298,20 +330,22 @@
 		width: 100%;
 		height: auto;
 		display: block;
+		filter: drop-shadow(0 2px 6px rgb(40 32 16 / 0.05));
 	}
 	.sketch :global(.t) {
 		font-family: var(--font-display);
-		font-size: 14px;
+		font-size: 14.5px;
+		font-weight: 540;
 		fill: var(--ink);
 	}
 	.sketch :global(.t.root) {
-		font-size: 17px;
+		font-size: 18px;
 		font-weight: 600;
 	}
 	.recents {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 8px;
 		max-width: 720px;
 	}
 	h2 {
@@ -319,11 +353,12 @@
 	}
 	.note {
 		color: var(--muted);
-		max-width: 60ch;
+		font-size: var(--t-sm);
+		max-width: 58ch;
 	}
 	ul {
 		list-style: none;
-		margin: 8px 0 0;
+		margin: 10px 0 0;
 		padding: 0;
 		border-top: 1px solid var(--line);
 	}
@@ -331,14 +366,21 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
+		padding: 0 6px;
+		margin: 0 -6px;
 		border-bottom: 1px solid var(--line);
+		border-radius: var(--r-sm);
+		transition: background-color 0.14s var(--ease);
+	}
+	li:hover {
+		background: color-mix(in srgb, var(--surface) 60%, transparent);
 	}
 	.tree-link {
 		flex: 1;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 		padding: 14px 4px;
 		color: inherit;
 		text-decoration: none;
@@ -347,6 +389,7 @@
 		font-family: var(--font-display);
 		font-size: var(--t-lg);
 		font-weight: 560;
+		transition: color 0.14s var(--ease);
 	}
 	.tree-link:hover .t {
 		color: var(--accent);
@@ -365,13 +408,19 @@
 	.warn {
 		color: var(--danger);
 	}
+	.forget {
+		color: var(--muted);
+	}
+	.forget:hover {
+		color: var(--ink);
+	}
 	.empty {
 		color: var(--muted);
 		font-style: italic;
 		padding: 12px 0;
 	}
 	.foot {
-		padding: 24px clamp(16px, 4vw, 48px);
+		padding: 24px clamp(16px, 4vw, 48px) 32px;
 		color: var(--muted);
 		font-size: var(--t-sm);
 		max-width: 1120px;
@@ -390,13 +439,17 @@
 			gap: 28px;
 		}
 		.sketch {
-			max-width: 420px;
+			max-width: 380px;
 			order: -1;
 		}
 	}
 	@media (max-width: 480px) {
 		.actions .btn {
 			flex: 1 1 100%;
+		}
+		.import {
+			align-self: stretch;
+			justify-content: center;
 		}
 		.sketch {
 			display: none;

@@ -9,6 +9,8 @@
 	const ed = useEditor();
 	const s = ed.s;
 	let fmt = $state<'json' | 'md'>('json');
+	let copied = $state(false);
+	let copyTimer: ReturnType<typeof setTimeout>;
 	const text = $derived(fmt === 'json' ? JSON.stringify(exportData(s.view, s.collapsed), null, 2) : toMarkdown(s.view));
 	const filename = $derived(slug(s.view.title) + (fmt === 'json' ? '.json' : '.md'));
 
@@ -17,12 +19,16 @@
 		toast.show('Downloaded ' + filename);
 	}
 	async function copy() {
-		if (await copyText(text)) toast.show('Copied to your clipboard');
-		else toast.show('Your browser blocked the clipboard. Download the file instead.');
+		if (await copyText(text)) {
+			copied = true;
+			clearTimeout(copyTimer);
+			copyTimer = setTimeout(() => (copied = false), 1800);
+			toast.show('Copied to your clipboard');
+		} else toast.show('Your browser blocked the clipboard. Download the file instead.');
 	}
 </script>
 
-<Modal bind:open={ed.exportOpen} title="Export your tree" size="lg">
+<Modal bind:open={ed.exportOpen} title="Export your tree" size="lg" onclose={() => (copied = false)}>
 	<p>
 		The tree file holds everything, including values with more than one parent, so you can import it here later or keep it as a backup.
 		The readable document is Markdown you can paste into a doc or an email.
@@ -34,7 +40,7 @@
 	<label class="sr-only" for="export-text">Contents</label>
 	<textarea id="export-text" readonly value={text}></textarea>
 	{#snippet actions()}
-		<button type="button" class="btn" onclick={copy}><Icon name="copy" /> Copy</button>
+		<button type="button" class="btn" onclick={copy}><Icon name={copied ? 'check' : 'copy'} /> {copied ? 'Copied' : 'Copy'}</button>
 		<button type="button" class="btn primary" data-autofocus onclick={save}><Icon name="download" /> Download {filename}</button>
 	{/snippet}
 </Modal>
@@ -58,6 +64,13 @@
 		font-weight: 520;
 		color: var(--muted);
 		min-height: 32px;
+		transition:
+			background-color 0.14s var(--ease),
+			color 0.14s var(--ease),
+			box-shadow 0.14s var(--ease);
+	}
+	.seg button:hover:not([aria-checked='true']) {
+		color: var(--ink);
 	}
 	.seg button[aria-checked='true'] {
 		background: var(--surface);
@@ -71,7 +84,7 @@
 		border: 1px solid var(--line);
 		border-radius: var(--r-sm);
 		padding: 10px 12px;
-		background: var(--paper);
+		background: var(--input-bg);
 		resize: vertical;
 		color: var(--ink-2);
 	}

@@ -50,32 +50,41 @@
 <style>
 	.note {
 		width: 100%;
-		border: 1px solid var(--line);
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		border-radius: var(--r-sm);
 		padding: 6px 10px;
-		background: var(--paper);
+		background: var(--surface);
 		font-family: var(--font-display);
 		font-style: italic;
 		font-size: 14.5px;
-		line-height: 1.4;
+		line-height: 1.42;
 		resize: none;
 		overflow: hidden;
 		min-height: 34px;
+		transition:
+			border-color 0.14s var(--ease),
+			background-color 0.14s var(--ease),
+			box-shadow 0.14s var(--ease);
+	}
+	.note:hover:not(:focus):not([readonly]) {
+		border-color: var(--line-strong);
 	}
 	.note:focus {
 		outline: none;
 		border-color: var(--accent);
 		background: var(--surface);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 		font-style: normal;
 	}
 	.note[readonly] {
 		border-color: transparent;
 		background: transparent;
-		padding-left: 0;
+		padding: 2px 0;
+		min-height: 0;
 	}
 	.none {
 		font-size: var(--t-sm);
 		color: var(--muted);
+		font-style: italic;
 	}
 </style>

@@ -16,10 +16,16 @@
 	let busy = $state(false);
 	let error = $state('');
 	let fresh = $state<null | 'edit' | 'view'>(null);
+	let copied = $state<null | 'edit' | 'view'>(null);
+	let copyTimer: ReturnType<typeof setTimeout>;
 
-	async function copy(url: string, what: string) {
-		if (await copyText(url)) toast.show(`Copied the ${what} link`);
-		else toast.show('Your browser blocked the clipboard. Select the link and copy it.');
+	async function copy(url: string, what: 'view' | 'edit') {
+		if (await copyText(url)) {
+			copied = what;
+			clearTimeout(copyTimer);
+			copyTimer = setTimeout(() => (copied = null), 1800);
+			toast.show(`Copied the ${what === 'view' ? 'view-only' : 'edit'} link`);
+		} else toast.show('Your browser blocked the clipboard. Select the link and copy it.');
 	}
 
 	async function regenerate(which: 'edit' | 'view') {
@@ -46,7 +52,7 @@
 	}
 </script>
 
-<Modal bind:open={ed.shareOpen} title="Share this tree" onclose={() => { confirm = null; fresh = null; error = ''; }}>
+<Modal bind:open={ed.shareOpen} title="Share this tree" onclose={() => { confirm = null; fresh = null; copied = null; error = ''; }}>
 	{#if s.role === 'edit'}
 		<p>Anyone with a link can open this tree. There are no accounts, so treat the edit link like a key.</p>
 	{:else}
@@ -56,7 +62,7 @@
 	{#if viewUrl}
 		<div class="link" class:fresh={fresh === 'view'}>
 			<div class="link-head">
-				<Icon name="eye" />
+				<span class="ico"><Icon name="eye" size={16} /></span>
 				<div>
 					<h3>View-only link</h3>
 					<p>Can read the tree and see who is here. Cannot change anything.</p>
@@ -64,7 +70,9 @@
 			</div>
 			<div class="copy-row">
 				<input class="input" readonly value={viewUrl} aria-label="View-only link" onfocus={(e) => e.currentTarget.select()} />
-				<button type="button" class="btn" data-autofocus={s.role === 'view' ? true : undefined} onclick={() => copy(viewUrl, 'view-only')}><Icon name="copy" /> Copy</button>
+				<button type="button" class="btn" data-autofocus={s.role === 'view' ? true : undefined} onclick={() => copy(viewUrl, 'view')}>
+					<Icon name={copied === 'view' ? 'check' : 'copy'} /> {copied === 'view' ? 'Copied' : 'Copy'}
+				</button>
 			</div>
 			{#if s.role === 'edit'}
 				{#if confirm === 'view'}
@@ -90,7 +98,7 @@
 	{#if s.role === 'edit'}
 		<div class="link" class:fresh={fresh === 'edit'}>
 			<div class="link-head">
-				<Icon name="pencil" />
+				<span class="ico edit"><Icon name="pencil" size={16} /></span>
 				<div>
 					<h3>Edit link</h3>
 					<p>Can change everything, share the tree, and make new links. Only give it to people you’d trust with the whole document.</p>
@@ -98,7 +106,9 @@
 			</div>
 			<div class="copy-row">
 				<input class="input" readonly value={editUrl} aria-label="Edit link" onfocus={(e) => e.currentTarget.select()} />
-				<button type="button" class="btn" data-autofocus onclick={() => copy(editUrl, 'edit')}><Icon name="copy" /> Copy</button>
+				<button type="button" class="btn" data-autofocus onclick={() => copy(editUrl, 'edit')}>
+					<Icon name={copied === 'edit' ? 'check' : 'copy'} /> {copied === 'edit' ? 'Copied' : 'Copy'}
+				</button>
 			</div>
 			{#if confirm === 'edit'}
 				<div class="confirm" role="alert">
@@ -122,8 +132,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		padding: 14px 0 4px;
-		border-top: 1px solid var(--line);
+		padding: 14px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		border-radius: var(--r);
+		background: var(--input-bg);
 	}
 	.link.fresh .input {
 		border-color: var(--accent);
@@ -131,13 +143,23 @@
 	}
 	.link-head {
 		display: flex;
-		gap: 12px;
+		gap: 11px;
 		align-items: flex-start;
 	}
-	.link-head :global(svg) {
-		margin-top: 3px;
-		color: var(--muted);
+	.ico {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		background: var(--paper-2);
+		color: var(--ink-2);
 		flex: none;
+		margin-top: 1px;
+	}
+	.ico.edit {
+		background: var(--accent-soft);
+		color: var(--accent);
 	}
 	h3 {
 		font-size: var(--t-md);
@@ -146,6 +168,7 @@
 	.link-head p {
 		font-size: var(--t-sm);
 		color: var(--muted);
+		margin-top: 1px;
 	}
 	.copy-row {
 		display: flex;
@@ -159,7 +182,7 @@
 		border: 1px solid var(--line);
 		border-radius: var(--r-sm);
 		padding: 8px 10px;
-		background: var(--paper);
+		background: var(--surface);
 	}
 	.regen {
 		align-self: flex-start;

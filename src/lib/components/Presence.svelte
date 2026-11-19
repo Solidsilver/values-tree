@@ -28,7 +28,7 @@
 	.presence {
 		display: flex;
 		align-items: center;
-		padding-left: 6px;
+		padding-left: 8px;
 	}
 	.av {
 		display: grid;
@@ -44,6 +44,7 @@
 		font-weight: 650;
 		letter-spacing: 0.02em;
 		padding: 0;
+		transition: transform 0.14s var(--ease);
 	}
 	.av.viewer {
 		background: var(--surface);

@@ -86,8 +86,8 @@
 		animation: rise 0.18s var(--ease);
 	}
 	.modal::backdrop {
-		background: rgb(20 18 12 / 0.42);
-		backdrop-filter: blur(1.5px);
+		background: var(--scrim);
+		backdrop-filter: blur(3px);
 	}
 	.inner {
 		display: flex;

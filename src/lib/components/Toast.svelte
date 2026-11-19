@@ -16,6 +16,7 @@
 		color: var(--paper);
 		padding: 10px 18px;
 		border-radius: 999px;
+		box-shadow: var(--shadow-lift);
 		font-size: var(--t-sm);
 		font-weight: 500;
 		max-width: calc(100% - 32px);

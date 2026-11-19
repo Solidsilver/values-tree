@@ -117,6 +117,7 @@ export function bindText(el: HTMLInputElement | HTMLTextAreaElement, params: Bin
 	el.addEventListener('compositionstart', onCompStart);
 	el.addEventListener('compositionend', onCompEnd);
 	el.readOnly = !!opts.readonly;
+	if (opts.autosize) el.dataset.autosize = 'true';
 	attach();
 	if (opts.autosize) requestAnimationFrame(() => grow(el));
 

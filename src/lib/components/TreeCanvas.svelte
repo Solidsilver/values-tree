@@ -294,6 +294,19 @@
 	});
 
 	const pct = $derived(Math.round(z * 100));
+	const altKeyLabel = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform) ? 'Option' : 'Alt';
+
+	const lineage = $derived.by(() => {
+		const sel = s.selectedKey;
+		if (!sel) return null;
+		const set = new Set<string>();
+		let cur = sel;
+		while (cur.includes('/')) {
+			set.add(cur);
+			cur = cur.slice(0, cur.lastIndexOf('/'));
+		}
+		return { ancestors: set, prefix: sel + '/' };
+	});
 </script>
 
 <div
@@ -310,7 +323,16 @@
 	<div class="world" class:entered bind:this={world} style:transform="translate({tx}px, {ty}px) scale({z})">
 		<svg class="links" width={size.w} height={size.h} aria-hidden="true">
 			{#each paths as p (p.key)}
-				<path d={p.d} stroke-width={p.w} style:stroke="var(--b{p.root + 1})" />
+				{@const isAnc = !!lineage?.ancestors.has(p.key)}
+				{@const isChild = !!lineage && p.key.startsWith(lineage.prefix) && p.key.indexOf('/', lineage.prefix.length) === -1}
+				<path
+					d={p.d}
+					class:active={isAnc}
+					class:child-active={isChild}
+					class:dim={!!lineage && !isAnc && !isChild}
+					stroke-width={isAnc ? p.w + 0.65 : p.w}
+					style:stroke="var(--b{p.root + 1})"
+				/>
 			{/each}
 		</svg>
 		<div class="forest" bind:this={forest} onanimationend={scheduleMeasure} role="tree" aria-label="Values tree" aria-multiselectable="false">
@@ -361,6 +383,12 @@
 		</div>
 	{/if}
 
+	{#if ed.dragKey}
+		<div class="drag-hint" role="status">
+			Drop on a value to move under it · Hold <kbd>{altKeyLabel}</kbd> to also connect
+		</div>
+	{/if}
+
 	<div class="zoom" role="toolbar" aria-label="Zoom">
 		<button type="button" class="icon-btn small" aria-label="Zoom out" onclick={() => zoomBy(1 / 1.2)}><Icon name="minus" /></button>
 		<button type="button" class="pct" aria-label="Reset zoom to 100%" onclick={() => zoomBy(1 / z)}>{pct}%</button>
@@ -406,14 +434,26 @@
 	.links path {
 		fill: none;
 		stroke-linecap: round;
-		opacity: 0.55;
+		opacity: 0.56;
+		transition:
+			opacity 0.2s var(--ease),
+			stroke-width 0.2s var(--ease);
+	}
+	.links path.active {
+		opacity: 0.94;
+	}
+	.links path.child-active {
+		opacity: 0.72;
+	}
+	.links path.dim {
+		opacity: 0.34;
 	}
 	.forest {
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 40px;
+		gap: 38px;
 		padding: 8px 40px 40px 8px;
 		width: max-content;
 	}
@@ -423,18 +463,23 @@
 		align-items: center;
 		gap: 8px;
 		width: 268px;
-		padding: 14px 18px;
-		border: 1.5px dashed var(--line-strong);
+		padding: 13px 18px;
+		border: 1.5px dashed color-mix(in srgb, var(--line-strong) 85%, transparent);
 		border-radius: var(--r);
-		background: transparent;
+		background: color-mix(in srgb, var(--surface) 40%, transparent);
 		color: var(--muted);
 		font-weight: 520;
+		font-size: var(--t-sm);
 		text-align: left;
+		transition:
+			border-color 0.14s var(--ease),
+			color 0.14s var(--ease),
+			background-color 0.14s var(--ease);
 	}
 	.add-root:hover {
 		border-color: var(--accent);
 		color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 5%, transparent);
+		background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 	}
 	.root-drop {
 		border-color: var(--accent);
@@ -445,6 +490,23 @@
 	.root-drop.over {
 		background: var(--accent);
 		color: var(--accent-ink);
+	}
+	.drag-hint {
+		position: absolute;
+		top: 14px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 6;
+		padding: 7px 14px;
+		border-radius: 999px;
+		border: 1px solid var(--line);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
+		backdrop-filter: blur(10px);
+		box-shadow: var(--shadow-lift);
+		font-size: var(--t-xs);
+		color: var(--ink-2);
+		white-space: nowrap;
+		pointer-events: none;
 	}
 	.empty {
 		position: absolute;
@@ -475,7 +537,8 @@
 		align-items: center;
 		gap: 2px;
 		padding: 3px;
-		background: var(--surface);
+		background: color-mix(in srgb, var(--surface) 90%, transparent);
+		backdrop-filter: blur(10px);
 		border: 1px solid var(--line);
 		border-radius: 999px;
 		box-shadow: var(--shadow);
@@ -484,12 +547,13 @@
 	.pct {
 		border: 0;
 		background: none;
-		min-width: 50px;
+		min-width: 48px;
 		font-size: var(--t-xs);
 		font-variant-numeric: tabular-nums;
 		color: var(--muted);
 		padding: 6px 2px;
 		border-radius: 999px;
+		transition: color 0.14s var(--ease);
 	}
 	.pct:hover {
 		color: var(--ink);
@@ -504,7 +568,16 @@
 		.zoom {
 			left: auto;
 			right: 12px;
-			bottom: 12px;
+			bottom: calc(12px + env(safe-area-inset-bottom));
+		}
+	}
+	@media (max-width: 520px) {
+		.zoom {
+			gap: 0;
+			padding: 2px;
+		}
+		.pct {
+			display: none;
 		}
 	}
 </style>

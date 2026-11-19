@@ -48,10 +48,11 @@
 </script>
 
 {#if pl && n && id}
-	<div class="panel-body" style:--hue="var(--b{(pl.rootIdx % 5) + 1})">
+	<div class="panel-body selected-body" style:--hue="var(--b{(pl.rootIdx % 5) + 1})">
 		<div class="where">
 			{#if crumbs.length}
 				<nav class="lineage" aria-label="Path to this spot">
+					<span class="root-mark" aria-hidden="true"></span>
 					<span class="lead">{parents.length > 1 ? 'Here, under' : 'Grows from'}</span>
 					{#each crumbs as c, i (c.key)}
 						{#if i}<span class="sep" aria-hidden="true">›</span>{/if}
@@ -85,19 +86,19 @@
 
 		<div class="field">
 			<label for="f-meaning">What it means to us</label>
-			<textarea id="f-meaning" rows="2" placeholder={ro ? 'Not written yet.' : 'In a sentence or two, what does this mean in our family?'} use:bindText={{ text: ed.text(id, 'meaning'), readonly: ro, autosize: true }}></textarea>
+			<textarea id="f-meaning" rows={ro ? 1 : 2} placeholder={ro ? 'Not written yet.' : 'In a sentence or two, what does this mean in our family?'} use:bindText={{ text: ed.text(id, 'meaning'), readonly: ro, autosize: true }}></textarea>
 		</div>
 		<div class="field">
 			<label for="f-practice">How we live it <span class="sub">habits, examples, things we say</span></label>
-			<textarea id="f-practice" rows="2" placeholder={ro ? 'Not written yet.' : 'What does this look like on an ordinary Tuesday?'} use:bindText={{ text: ed.text(id, 'practice'), readonly: ro, autosize: true }}></textarea>
+			<textarea id="f-practice" rows={ro ? 1 : 2} placeholder={ro ? 'Not written yet.' : 'What does this look like on an ordinary Tuesday?'} use:bindText={{ text: ed.text(id, 'practice'), readonly: ro, autosize: true }}></textarea>
 		</div>
 		<div class="field">
 			<label for="f-avoid">Not this <span class="sub">good things we pass on, and why</span></label>
-			<textarea id="f-avoid" rows="2" placeholder={ro ? 'Not written yet.' : 'e.g. Resort trips where we mostly lie around and are waited on'} use:bindText={{ text: ed.text(id, 'avoid'), readonly: ro, autosize: true }}></textarea>
+			<textarea id="f-avoid" rows={ro ? 1 : 2} placeholder={ro ? 'Not written yet.' : 'e.g. Resort trips where we mostly lie around and are waited on'} use:bindText={{ text: ed.text(id, 'avoid'), readonly: ro, autosize: true }}></textarea>
 		</div>
 
 		{#if !ro}
-			<div class="row">
+			<div class="row action-row">
 				<button type="button" class="btn primary" onclick={() => ed.addChild(pl.key)}><Icon name="plus" /> Add a value under this</button>
 				<button type="button" class="btn" onclick={() => ed.addSibling(pl.key)}>Add a sibling</button>
 			</div>
@@ -135,8 +136,11 @@
 					{#each n.children as c (c)}
 						<li>
 							<button type="button" onclick={() => ed.select(pl.key + '/' + c, true)}>
-								<span>{titleOf(v, c)}</span>
-								{#if (v.parentsOf.get(c) || []).length > 1}<span class="shared-mark"><Icon name="branch" size={13} /> shared</span>{/if}
+								<span class="kid-name">{titleOf(v, c)}</span>
+								<span class="kid-tail">
+									{#if (v.parentsOf.get(c) || []).length > 1}<span class="shared-mark"><Icon name="branch" size={13} /> shared</span>{/if}
+									<span class="kid-chev" aria-hidden="true"><Icon name="chevron" size={14} /></span>
+								</span>
 							</button>
 						</li>
 					{/each}
@@ -232,7 +236,7 @@
 		</p>
 		<div class="field">
 			<label for="f-intro">Why we’re writing this <span class="sub">opens the document</span></label>
-			<textarea id="f-intro" rows="3" placeholder={ro ? 'No introduction yet.' : 'What do we hope this gives our family?'} use:bindText={{ text: ed.metaText('intro'), readonly: ro, autosize: true }}></textarea>
+			<textarea id="f-intro" rows={ro ? 1 : 3} placeholder={ro ? 'No introduction yet.' : 'What do we hope this gives our family?'} use:bindText={{ text: ed.metaText('intro'), readonly: ro, autosize: true }}></textarea>
 		</div>
 		<dl class="stats">
 			<div><dt>Root values</dt><dd>{v.stats.roots}</dd></div>
@@ -254,7 +258,17 @@
 		display: flex;
 		flex-direction: column;
 		gap: 18px;
-		padding: 20px 22px 32px;
+		padding: 20px 22px 36px;
+	}
+	.selected-body {
+		border-top: 3px solid var(--hue);
+		padding-top: 17px;
+	}
+	@media (max-width: 860px) {
+		.selected-body {
+			border-top: 0;
+			padding-top: 10px;
+		}
 	}
 	.where {
 		display: flex;
@@ -288,6 +302,7 @@
 		text-decoration: underline;
 		text-decoration-color: var(--line-strong);
 		text-underline-offset: 3px;
+		transition: color 0.14s var(--ease);
 	}
 	.lineage button:hover {
 		color: var(--accent);
@@ -295,11 +310,13 @@
 	}
 	.root-mark {
 		display: inline-block;
-		width: 9px;
-		height: 9px;
+		width: 8px;
+		height: 8px;
 		border-radius: 2px;
 		background: var(--hue);
-		margin-right: 6px;
+		margin-right: 5px;
+		align-self: center;
+		flex: none;
 	}
 	.title-field #f-title {
 		font-family: var(--font-display);
@@ -308,7 +325,7 @@
 		font-size: var(--t-2xl);
 		line-height: 1.15;
 		letter-spacing: -0.01em;
-		padding: 2px 0 4px;
+		padding: 2px 0 5px;
 		border: 0;
 		border-bottom: 1.5px solid var(--line);
 		border-radius: 0;
@@ -325,13 +342,16 @@
 	}
 	.kind {
 		font-size: var(--t-xs);
-		color: color-mix(in srgb, var(--hue) 70%, var(--muted));
-		font-weight: 550;
+		color: color-mix(in srgb, var(--hue) 72%, var(--muted));
+		font-weight: 560;
 	}
 	.row {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
+	}
+	.action-row .btn {
+		flex: 1 1 auto;
 	}
 	.group {
 		display: flex;
@@ -351,6 +371,7 @@
 	.hint {
 		font-size: var(--t-sm);
 		color: var(--muted);
+		line-height: 1.48;
 	}
 	.fold-group summary {
 		cursor: pointer;
@@ -360,18 +381,22 @@
 		gap: 8px;
 		min-height: 28px;
 	}
+	.fold-group summary:hover h3 {
+		color: var(--accent);
+	}
 	.fold-group summary::-webkit-details-marker {
 		display: none;
 	}
 	.fold-group summary::before {
 		content: '';
-		width: 7px;
-		height: 7px;
+		width: 6.5px;
+		height: 6.5px;
 		border-right: 1.6px solid var(--muted);
 		border-bottom: 1.6px solid var(--muted);
 		transform: rotate(-45deg);
 		transition: transform 0.15s var(--ease);
 		margin: 0 3px 0 1px;
+		flex: none;
 	}
 	.fold-group[open] summary::before {
 		transform: rotate(45deg);
@@ -385,17 +410,21 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 10px;
 	}
 	.shaped li {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 7px;
+		padding: 10px 11px;
+		border-radius: var(--r);
+		background: var(--input-bg);
+		border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
 	}
 	.shaped-head {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 3px;
 	}
 	.rank {
 		flex: none;
@@ -409,7 +438,7 @@
 		display: grid;
 		place-items: center;
 		font-variant-numeric: tabular-nums;
-		margin-right: 4px;
+		margin-right: 5px;
 	}
 	.plink {
 		flex: 1;
@@ -417,13 +446,14 @@
 		text-align: left;
 		border: 0;
 		background: none;
-		padding: 4px 2px;
+		padding: 3px 2px;
 		font-family: var(--font-display);
 		font-weight: 560;
 		font-size: 16px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		transition: color 0.14s var(--ease);
 	}
 	.plink:hover {
 		color: var(--accent);
@@ -441,20 +471,51 @@
 		justify-content: space-between;
 		gap: 8px;
 		width: 100%;
-		min-height: 36px;
+		min-height: 38px;
 		text-align: left;
 		border: 0;
 		border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
 		background: none;
-		padding: 6px 2px;
+		padding: 6px 4px;
+		margin: 0 -4px;
+		border-radius: var(--r-sm);
 		font-family: var(--font-display);
 		font-size: 15.5px;
+		transition:
+			background-color 0.14s var(--ease),
+			color 0.14s var(--ease);
 	}
 	.kids li:last-child button {
 		border-bottom: 0;
 	}
 	.kids button:hover {
+		background: var(--input-bg);
 		color: var(--accent);
+	}
+	.kid-name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.kid-tail {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		flex: none;
+	}
+	.kid-chev {
+		display: inline-flex;
+		color: var(--muted);
+		opacity: 0.45;
+		transition:
+			opacity 0.14s var(--ease),
+			transform 0.14s var(--ease);
+	}
+	.kids button:hover .kid-chev {
+		opacity: 1;
+		color: var(--accent);
+		transform: translateX(2px);
 	}
 	.shared-mark {
 		display: inline-flex;
@@ -470,15 +531,17 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 7px;
 	}
 	.checks li {
 		display: flex;
 		gap: 10px;
 		align-items: flex-start;
-		background: var(--paper);
+		background: var(--input-bg);
+		border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
 		border-radius: var(--r-sm);
 		padding: 9px 11px;
+		transition: opacity 0.16s var(--ease);
 	}
 	.checks input {
 		margin-top: 3px;
@@ -515,19 +578,19 @@
 	.stats {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 8px;
+		gap: 10px;
 		margin: 0;
 	}
 	.stats div {
 		border-top: 2px solid var(--line);
-		padding: 8px 0 0;
+		padding: 9px 0 0;
 	}
 	.stats dt {
 		font-size: var(--t-xs);
 		color: var(--muted);
 	}
 	.stats dd {
-		margin: 0;
+		margin: 2px 0 0;
 		font-family: var(--font-display);
 		font-size: var(--t-2xl);
 		font-weight: 560;

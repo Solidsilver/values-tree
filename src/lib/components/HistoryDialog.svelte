@@ -61,6 +61,14 @@
 		doc.destroy();
 		return v;
 	});
+	const previewRows = $derived.by(() => {
+		if (!preview) return [];
+		let r = -1;
+		return outline(preview).map((row) => {
+			if (row.depth === 0) r++;
+			return { ...row, rootIdx: Math.max(0, r) };
+		});
+	});
 	const diff = $derived(detail ? diffTrees(detail.tree.nodes, s.view.nodes) : null);
 	const back = $derived(new Set(diff?.back));
 	const changed = $derived(new Set(diff?.changed));
@@ -182,8 +190,8 @@
 					</header>
 					{#if preview.roots.length}
 						<ol class="outline">
-							{#each outline(preview) as row (row.id)}
-								<li style:--depth={row.depth} class:root={row.depth === 0} class:back={back.has(row.id)} class:changed={changed.has(row.id)}>
+							{#each previewRows as row (row.id)}
+								<li style:--depth={row.depth} style:--hue="var(--b{(row.rootIdx % 5) + 1})" class:root={row.depth === 0} class:back={back.has(row.id)} class:changed={changed.has(row.id)}>
 									<span class="dot" aria-hidden="true"></span>
 									<span class="name">{titleOf(preview, row.id)}</span>
 									{#if back.has(row.id)}<span class="tag">comes back</span>{:else if changed.has(row.id)}<span class="tag">changed</span>{/if}
@@ -253,8 +261,6 @@
 		padding: 10px 16px 4px;
 		background: var(--paper);
 		font: 600 var(--t-xs) / 1.3 var(--font-ui);
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
 		color: var(--muted);
 	}
 	.list ul {
@@ -268,11 +274,12 @@
 		align-items: flex-start;
 		gap: 1px;
 		width: 100%;
-		padding: 7px 10px;
+		padding: 8px 10px;
 		border: 0;
 		border-radius: var(--r-sm);
 		background: transparent;
 		text-align: left;
+		transition: background-color 0.14s var(--ease);
 	}
 	.list button:hover {
 		background: var(--paper-2);
@@ -306,9 +313,7 @@
 	.when {
 		font-size: var(--t-xs);
 		color: var(--muted) !important;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		font-weight: 600;
+		font-weight: 550;
 	}
 	.ttl {
 		font: 560 var(--t-xl) / 1.2 var(--font-display);
@@ -351,19 +356,30 @@
 		gap: 8px;
 		padding: 3px 0 3px calc(var(--depth) * 18px);
 		font-size: var(--t-sm);
-		line-height: 1.35;
+		line-height: 1.4;
 	}
 	.outline li.root {
-		font-weight: 600;
-		padding-top: 8px;
+		font-family: var(--font-display);
+		font-size: 16px;
+		font-weight: 580;
+		padding-top: 10px;
+	}
+	.outline li.root:first-child {
+		padding-top: 2px;
 	}
 	.dot {
 		flex: none;
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: var(--line-strong);
+		background: color-mix(in srgb, var(--hue) 48%, var(--line-strong));
 		transform: translateY(-1px);
+	}
+	.outline li.root .dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 2px;
+		background: var(--hue);
 	}
 	.outline li.back .dot {
 		background: var(--b1);

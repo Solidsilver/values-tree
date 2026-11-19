@@ -32,6 +32,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
+		padding: 0 5px;
 		font-size: var(--t-xs);
 		font-weight: 520;
 		color: var(--muted);

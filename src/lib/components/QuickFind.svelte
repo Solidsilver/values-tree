@@ -10,7 +10,18 @@
 
 	const results = $derived.by(() => {
 		const needle = q.trim().toLowerCase();
-		const list = outline(v).map((o) => ({ ...o, title: titleOf(v, o.id), meaning: v.nodes[o.id].meaning }));
+		let r = -1;
+		const list = outline(v).map((o) => {
+			if (o.depth === 0) r++;
+			const parents = (v.parentsOf.get(o.id) || []).map((pid) => titleOf(v, pid));
+			return {
+				...o,
+				rootIdx: Math.max(0, r),
+				title: titleOf(v, o.id),
+				meaning: v.nodes[o.id].meaning,
+				context: parents.length ? parents.join(' · ') : 'Root value'
+			};
+		});
 		if (!needle) return list.slice(0, 50);
 		return list
 			.map((o) => {
@@ -65,13 +76,22 @@
 		{#each results as r, i (r.id)}
 			<li id="find-{r.id}" role="option" aria-selected={i === active}>
 				<button type="button" tabindex="-1" onclick={() => go(r.id)} onmouseenter={() => (active = i)}>
-					<span class="t" style:padding-left="{Math.min(r.depth, 6) * 10}px">{r.title}</span>
+					<span class="dot" style:background="var(--b{(r.rootIdx % 5) + 1})" aria-hidden="true"></span>
+					<span class="col">
+						<span class="t">{r.title}</span>
+						<span class="ctx">{r.context}</span>
+					</span>
 				</button>
 			</li>
 		{:else}
 			<li class="none">No value matches “{q}”.</li>
 		{/each}
 	</ul>
+	<p class="keys-hint" aria-hidden="true">
+		<span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
+		<span><kbd>Enter</kbd> jump</span>
+		<span><kbd>Esc</kbd> close</span>
+	</p>
 </Modal>
 
 <style>
@@ -80,30 +100,61 @@
 		padding: 10px 12px;
 		border: 1px solid var(--line);
 		border-radius: var(--r-sm);
-		background: var(--paper);
+		background: var(--input-bg);
 		width: 100%;
 	}
 	.find:focus {
 		outline: none;
 		border-color: var(--accent);
+		background: var(--surface);
 	}
 	ul {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		max-height: 50vh;
+		max-height: 48vh;
 		overflow: auto;
 	}
 	li button {
+		display: flex;
+		align-items: center;
+		gap: 10px;
 		width: 100%;
 		text-align: left;
 		border: 0;
 		background: none;
 		padding: 8px 10px;
 		border-radius: var(--r-sm);
+		min-height: 44px;
+		transition: background-color 0.1s var(--ease);
+	}
+	.dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		flex: none;
+	}
+	.col {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		gap: 1px;
+	}
+	.t {
 		font-family: var(--font-display);
 		font-size: 16px;
-		min-height: 40px;
+		font-weight: 560;
+		line-height: 1.25;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.ctx {
+		font-size: var(--t-xs);
+		color: var(--muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	li[aria-selected='true'] button {
 		background: var(--accent-soft);
@@ -111,6 +162,21 @@
 	}
 	.none {
 		color: var(--muted);
-		padding: 8px 10px;
+		padding: 10px;
+		font-size: var(--t-sm);
+	}
+	.keys-hint {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 14px;
+		padding-top: 10px;
+		border-top: 1px solid var(--line);
+		font-size: var(--t-xs);
+		color: var(--muted) !important;
+	}
+	.keys-hint span {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 	}
 </style>

@@ -10,6 +10,8 @@
 	const s = ed.s;
 	const v = $derived(s.view);
 	const plan = $derived(docPlan(v));
+	let copied = $state(false);
+	let copyTimer: ReturnType<typeof setTimeout>;
 
 	const paras = (t: string) =>
 		t
@@ -19,13 +21,18 @@
 			.map((p) => p.split('\n'));
 
 	async function copyMd() {
-		if (await copyText(toMarkdown(v))) toast.show('Copied the document as Markdown');
-		else toast.show('Your browser blocked the clipboard. Use Export instead.');
+		if (await copyText(toMarkdown(v))) {
+			copied = true;
+			clearTimeout(copyTimer);
+			copyTimer = setTimeout(() => (copied = false), 1800);
+			toast.show('Copied the document as Markdown');
+		} else toast.show('Your browser blocked the clipboard. Use Export instead.');
 	}
 	function sel(id: string) {
 		const k = v.firstKey.get(id);
 		if (k) ed.select(k);
 	}
+	const plural = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 </script>
 
 {#snippet lines(text: string)}
@@ -70,13 +77,26 @@
 {/snippet}
 
 <div class="docview">
-	<div class="doc-tools">
-		<button type="button" class="btn small" onclick={copyMd}><Icon name="copy" /> Copy as Markdown</button>
-		<button type="button" class="btn small" onclick={() => window.print()}><Icon name="print" /> Print or save as PDF</button>
+	<div class="doc-bar">
+		<span class="doc-meta">
+			{#if v.stats.total}
+				{plural(v.stats.roots, 'root value')} · {plural(v.stats.total, 'value')}
+			{:else}
+				Empty document
+			{/if}
+		</span>
+		<div class="doc-tools">
+			<button type="button" class="btn small" onclick={copyMd}>
+				<Icon name={copied ? 'check' : 'copy'} /> {copied ? 'Copied' : 'Copy as Markdown'}
+			</button>
+			<button type="button" class="btn small" onclick={() => window.print()}><Icon name="print" /> Print or save as PDF</button>
+		</div>
 	</div>
 	<article class="doc">
-		<h1>{v.title}</h1>
-		{#if v.intro.trim()}<div class="intro">{@render lines(v.intro)}</div>{/if}
+		<header class="doc-header">
+			<h1>{v.title}</h1>
+			{#if v.intro.trim()}<div class="intro">{@render lines(v.intro)}</div>{/if}
+		</header>
 		{#if v.roots.length}
 			{#each v.roots as r, i (r)}{@render node(r, 0, i)}{/each}
 		{:else}
@@ -89,33 +109,49 @@
 	.docview {
 		height: 100%;
 		overflow: auto;
-		padding: 28px clamp(16px, 5vw, 56px) 96px;
+		padding: 20px clamp(16px, 5vw, 56px) 96px;
+	}
+	.doc-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px 16px;
+		max-width: 66ch;
+		margin: 0 auto 28px;
+		padding-bottom: 14px;
+		border-bottom: 1px solid var(--line);
+	}
+	.doc-meta {
+		font-size: var(--t-xs);
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
 	}
 	.doc-tools {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 8px;
-		justify-content: flex-end;
-		max-width: 70ch;
-		margin: 0 auto 8px;
 	}
 	.doc {
 		max-width: 66ch;
 		margin: 0 auto;
 		font-size: 16.5px;
-		line-height: 1.6;
+		line-height: 1.64;
+	}
+	.doc-header {
+		margin-bottom: 36px;
 	}
 	h1 {
-		font-size: var(--t-3xl);
-		line-height: 1.05;
-		margin: 24px 0 18px;
+		font-size: clamp(32px, 4.2vw, var(--t-3xl));
+		line-height: 1.06;
+		margin: 0 0 16px;
 		font-variation-settings: 'opsz' 144;
 	}
 	.intro {
 		font-family: var(--font-display);
 		font-size: 19px;
-		line-height: 1.55;
+		line-height: 1.56;
 		color: var(--ink-2);
-		margin-bottom: 36px;
 		font-variation-settings: 'opsz' 18;
 	}
 	.intro p,
@@ -124,20 +160,28 @@
 	}
 	.doc-node {
 		margin: 20px 0 8px;
-		padding-left: 20px;
-		border-left: 1.5px solid color-mix(in srgb, var(--hue) 45%, transparent);
+		padding: 2px 10px 2px 20px;
+		border-left: 1.5px solid color-mix(in srgb, var(--hue) 44%, transparent);
+		border-radius: 0 var(--r-sm) var(--r-sm) 0;
+		transition:
+			background-color 0.16s var(--ease),
+			border-color 0.16s var(--ease);
 	}
 	.doc-node .doc-node {
 		margin: 16px 0 6px;
 	}
 	.doc-node.d0 {
-		margin-top: 48px;
+		margin-top: 44px;
 		border-left-width: 4px;
 	}
+	.doc-node.selected {
+		background: color-mix(in srgb, var(--accent) 7%, transparent);
+		border-left-color: var(--accent);
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
 	.doc-node.selected > .doc-h button {
-		text-decoration: underline;
-		text-decoration-color: var(--accent);
-		text-decoration-thickness: 2px;
+		color: var(--accent);
 	}
 	.doc-h {
 		margin: 0 0 6px;
@@ -150,6 +194,7 @@
 		all: unset;
 		cursor: pointer;
 		border-radius: 3px;
+		transition: color 0.14s var(--ease);
 	}
 	.doc-h button:focus-visible {
 		outline: 2px solid var(--focus);
@@ -190,13 +235,25 @@
 		color: var(--danger);
 	}
 	.shaped {
-		font-size: 15px;
+		font-size: 14.5px;
 		color: var(--ink-2);
-		margin: 6px 0 10px;
+		margin: 10px 0 12px;
+		padding: 9px 13px;
+		border-radius: var(--r-sm);
+		background: color-mix(in srgb, var(--surface) 60%, var(--paper));
+		border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+	}
+	.shaped strong {
+		font-size: var(--t-xs);
+		font-weight: 600;
+		color: var(--muted);
 	}
 	.shaped ol {
 		margin: 4px 0 0;
-		padding-left: 22px;
+		padding-left: 20px;
+	}
+	.shaped em {
+		font-family: var(--font-display);
 	}
 	.ref {
 		all: unset;
@@ -204,7 +261,10 @@
 		color: var(--accent);
 		text-decoration: underline;
 		text-underline-offset: 3px;
-		text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+		text-decoration-color: color-mix(in srgb, var(--accent) 42%, transparent);
+	}
+	.ref:hover {
+		text-decoration-color: currentColor;
 	}
 	.ref:focus-visible {
 		outline: 2px solid var(--focus);
@@ -212,7 +272,7 @@
 	.also {
 		font-size: 15px;
 		color: var(--muted);
-		margin: 6px 0 8px 20px;
+		margin: 8px 0 8px 20px;
 		font-style: italic;
 	}
 	.empty {
@@ -225,7 +285,7 @@
 			overflow: visible;
 			padding: 0;
 		}
-		.doc-tools {
+		.doc-bar {
 			display: none;
 		}
 		.doc {
@@ -243,6 +303,9 @@
 		}
 		.doc-node {
 			break-inside: auto;
+			background: none !important;
+			padding-top: 0 !important;
+			padding-bottom: 0 !important;
 		}
 		.doc-h {
 			break-after: avoid;
@@ -250,12 +313,17 @@
 		.d0 {
 			break-before: auto;
 		}
+		.shaped {
+			background: none;
+			border: 0;
+			padding: 0;
+		}
 		.ref {
 			color: inherit;
 			text-decoration: none;
 		}
 		.doc-node.selected > .doc-h button {
-			text-decoration: none;
+			color: inherit;
 		}
 	}
 </style>

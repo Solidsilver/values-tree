@@ -6,6 +6,7 @@
 	--paper: #f4efe5;
 	--paper-2: #ece5d7;
 	--surface: #fffcf6;
+	--input-bg: color-mix(in srgb, var(--paper) 64%, var(--surface));
 	--ink: #23211c;
 	--ink-2: #45413a;
 	--muted: #6a6357;
@@ -17,9 +18,10 @@
 	--danger: #9e3328;
 	--danger-soft: #f6e3dd;
 	--focus: #2e5b45;
-	--shadow: 0 1px 0 rgb(60 45 20 / 0.06), 0 2px 6px rgb(60 45 20 / 0.06);
-	--shadow-lift: 0 2px 0 rgb(60 45 20 / 0.05), 0 10px 24px rgb(60 45 20 / 0.12);
+	--shadow: 0 1px 1px rgb(55 42 18 / 0.05), 0 2px 8px rgb(55 42 18 / 0.055);
+	--shadow-lift: 0 2px 4px rgb(55 42 18 / 0.06), 0 12px 28px rgb(55 42 18 / 0.11);
 	--grain: 0.05;
+	--scrim: rgb(22 19 14 / 0.36);
 
 	--b1: #3b6a48;
 	--b2: #3a5a8c;
@@ -53,20 +55,22 @@
 		--paper: #141714;
 		--paper-2: #1b1f1b;
 		--surface: #1f2420;
+		--input-bg: #181c18;
 		--ink: #ebe5d8;
 		--ink-2: #cfc8b9;
 		--muted: #a39d8f;
-		--line: #353c35;
-		--line-strong: #4e574d;
+		--line: #313831;
+		--line-strong: #4b544a;
 		--accent: #93c9a6;
 		--accent-ink: #10201a;
 		--accent-soft: #223328;
 		--danger: #f0907f;
 		--danger-soft: #3a2320;
 		--focus: #93c9a6;
-		--shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.25);
-		--shadow-lift: 0 2px 0 rgb(0 0 0 / 0.3), 0 12px 28px rgb(0 0 0 / 0.45);
+		--shadow: 0 1px 1px rgb(0 0 0 / 0.28), 0 3px 10px rgb(0 0 0 / 0.24);
+		--shadow-lift: 0 3px 6px rgb(0 0 0 / 0.32), 0 14px 32px rgb(0 0 0 / 0.45);
 		--grain: 0.035;
+		--scrim: rgb(6 8 6 / 0.58);
 		--b1: #8dc59c;
 		--b2: #9cb6e4;
 		--b3: #d9b863;
@@ -79,20 +83,22 @@
 	--paper: #141714;
 	--paper-2: #1b1f1b;
 	--surface: #1f2420;
+	--input-bg: #181c18;
 	--ink: #ebe5d8;
 	--ink-2: #cfc8b9;
 	--muted: #a39d8f;
-	--line: #353c35;
-	--line-strong: #4e574d;
+	--line: #313831;
+	--line-strong: #4b544a;
 	--accent: #93c9a6;
 	--accent-ink: #10201a;
 	--accent-soft: #223328;
 	--danger: #f0907f;
 	--danger-soft: #3a2320;
 	--focus: #93c9a6;
-	--shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.25);
-	--shadow-lift: 0 2px 0 rgb(0 0 0 / 0.3), 0 12px 28px rgb(0 0 0 / 0.45);
+	--shadow: 0 1px 1px rgb(0 0 0 / 0.28), 0 3px 10px rgb(0 0 0 / 0.24);
+	--shadow-lift: 0 3px 6px rgb(0 0 0 / 0.32), 0 14px 32px rgb(0 0 0 / 0.45);
 	--grain: 0.035;
+	--scrim: rgb(6 8 6 / 0.58);
 	--b1: #8dc59c;
 	--b2: #9cb6e4;
 	--b3: #d9b863;
@@ -185,12 +191,17 @@ a {
 	line-height: 1.2;
 	white-space: nowrap;
 	transition:
-		background-color 0.12s,
-		border-color 0.12s,
-		color 0.12s;
+		background-color 0.14s var(--ease),
+		border-color 0.14s var(--ease),
+		color 0.14s var(--ease),
+		transform 0.12s var(--ease);
 }
 .btn:hover:not(:disabled) {
 	border-color: var(--ink-2);
+	background: color-mix(in srgb, var(--paper-2) 55%, var(--surface));
+}
+.btn:active:not(:disabled) {
+	transform: scale(0.985);
 }
 .btn:disabled {
 	opacity: 0.45;
@@ -217,10 +228,18 @@ a {
 	color: var(--danger);
 	border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
 }
+.btn.danger:hover:not(:disabled) {
+	background: var(--danger-soft);
+	border-color: color-mix(in srgb, var(--danger) 65%, var(--line));
+}
 .btn.danger-fill {
 	background: var(--danger);
 	border-color: var(--danger);
 	color: var(--surface);
+}
+.btn.danger-fill:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--danger) 88%, var(--ink));
+	border-color: transparent;
 }
 .btn.small {
 	min-height: 30px;
@@ -237,10 +256,17 @@ a {
 	border-radius: 999px;
 	background: transparent;
 	color: var(--ink-2);
+	transition:
+		background-color 0.14s var(--ease),
+		color 0.14s var(--ease),
+		transform 0.12s var(--ease);
 }
 .icon-btn:hover:not(:disabled) {
 	background: var(--paper-2);
 	color: var(--ink);
+}
+.icon-btn:active:not(:disabled) {
+	transform: scale(0.94);
 }
 .icon-btn:disabled {
 	opacity: 0.35;
@@ -275,37 +301,51 @@ a {
 .field {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 5px;
 }
 .field > label,
 .field-label {
 	font-size: var(--t-sm);
 	font-weight: 600;
 	color: var(--ink-2);
+	line-height: 1.35;
 }
 .field .sub {
+	display: block;
+	font-size: var(--t-xs);
 	font-weight: 400;
 	color: var(--muted);
+	margin-top: 1px;
 }
 .input,
 .field input:not([type='checkbox']):not([type='file']),
 .field textarea,
 .field select {
 	width: 100%;
-	border: 1px solid var(--line);
+	border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
 	border-radius: var(--r-sm);
 	padding: 8px 11px;
-	background: var(--paper);
-	line-height: 1.45;
+	background: var(--input-bg);
+	line-height: 1.48;
 	transition:
-		border-color 0.12s,
-		background-color 0.12s;
+		border-color 0.14s var(--ease),
+		background-color 0.14s var(--ease),
+		box-shadow 0.14s var(--ease);
+}
+.input:hover:not(:focus):not([readonly]),
+.field input:not([type='checkbox']):not([type='file']):hover:not(:focus):not([readonly]),
+.field textarea:hover:not(:focus):not([readonly]),
+.field select:hover:not(:focus) {
+	border-color: var(--line-strong);
 }
 .field textarea {
 	resize: vertical;
-	min-height: 64px;
+	min-height: 60px;
 	max-height: 420px;
 	overflow: auto;
+}
+.field textarea[data-autosize] {
+	resize: none;
 }
 .input:focus,
 .field input:focus,
@@ -314,22 +354,30 @@ a {
 	outline: none;
 	border-color: var(--accent);
 	background: var(--surface);
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 .field input[readonly],
 .field textarea[readonly] {
 	background: transparent;
 	border-color: transparent;
-	padding-left: 0;
+	padding: 2px 0;
+	min-height: 0;
 	resize: none;
 	box-shadow: none;
 }
 .field textarea[readonly]:placeholder-shown {
 	font-style: italic;
+	color: var(--muted);
 	min-height: 0;
 }
 ::placeholder {
-	color: color-mix(in srgb, var(--muted) 80%, transparent);
+	color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+/* subtle scrollbars */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--line-strong) 65%, transparent) transparent;
 }
 
 kbd {

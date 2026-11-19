@@ -249,8 +249,12 @@
 				<DocView />
 			{/if}
 		</section>
+		{#if ed.sheetOpen}
+			<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+			<div class="sheet-scrim" onclick={() => (ed.sheetOpen = false)}></div>
+		{/if}
 		<aside class="panel" aria-label="Details">
-			<div class="sheet-handle" aria-hidden="true"></div>
+			<div class="sheet-handle-bar" aria-hidden="true"><span class="sheet-handle"></span></div>
 			{#if s.loaded}<Panel />{/if}
 		</aside>
 	</main>
@@ -322,6 +326,7 @@
 	}
 	.doc-title input:hover:not([readonly]) {
 		border-color: var(--line);
+		background: color-mix(in srgb, var(--paper-2) 45%, transparent);
 	}
 	.doc-title input:focus {
 		outline: none;
@@ -347,6 +352,13 @@
 		font-size: var(--t-sm);
 		font-weight: 550;
 		color: var(--muted);
+		transition:
+			background-color 0.14s var(--ease),
+			color 0.14s var(--ease),
+			box-shadow 0.14s var(--ease);
+	}
+	.tabs button:hover:not([aria-selected='true']) {
+		color: var(--ink);
 	}
 	.tabs button[aria-selected='true'] {
 		background: var(--surface);
@@ -356,16 +368,16 @@
 	.tools {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 3px;
 	}
 	.divider {
 		width: 1px;
-		height: 22px;
+		height: 20px;
 		background: var(--line);
 		margin: 0 6px;
 	}
 	.share {
-		margin-left: 6px;
+		margin-left: 4px;
 	}
 	.banner {
 		display: flex;
@@ -383,6 +395,10 @@
 		align-items: center;
 		gap: 4px 8px;
 		flex-wrap: wrap;
+		color: var(--ink-2);
+	}
+	.banner p strong {
+		color: var(--ink);
 	}
 	.banner.accent {
 		background: var(--accent-soft);
@@ -411,7 +427,8 @@
 		overflow: auto;
 		overscroll-behavior: contain;
 	}
-	.sheet-handle,
+	.sheet-scrim,
+	.sheet-handle-bar,
 	.details-btn {
 		display: none;
 	}
@@ -517,11 +534,6 @@
 		.tabs button :global(svg) {
 			display: none;
 		}
-		.tools {
-			grid-area: tools;
-			justify-self: end;
-			gap: 0;
-		}
 		.tools .divider,
 		.secondary {
 			display: none;
@@ -530,7 +542,7 @@
 			display: block;
 		}
 		.tools :global(.icon-btn) {
-			width: 40px;
+			width: 38px;
 		}
 		.doc-title input,
 		.title-ph {
@@ -540,16 +552,25 @@
 			grid-template-columns: 1fr;
 			position: relative;
 		}
+		.sheet-scrim {
+			display: block;
+			position: fixed;
+			inset: 0;
+			background: var(--scrim);
+			backdrop-filter: blur(1.5px);
+			z-index: 19;
+			animation: fade-in 0.2s ease;
+		}
 		.panel {
 			position: fixed;
 			left: 0;
 			right: 0;
 			bottom: 0;
-			max-height: 62dvh;
+			max-height: 68dvh;
 			border-left: 0;
 			border-top: 1px solid var(--line);
 			border-radius: var(--r-lg) var(--r-lg) 0 0;
-			box-shadow: 0 -10px 30px rgb(0 0 0 / 0.16);
+			box-shadow: 0 -10px 34px rgb(0 0 0 / 0.18);
 			transform: translateY(105%);
 			transition: transform 0.24s var(--ease);
 			z-index: 20;
@@ -558,13 +579,21 @@
 		.sheet-open .panel {
 			transform: none;
 		}
+		.sheet-handle-bar {
+			display: flex;
+			justify-content: center;
+			position: sticky;
+			top: 0;
+			z-index: 2;
+			padding: 10px 0 4px;
+			background: var(--surface);
+		}
 		.sheet-handle {
 			display: block;
-			width: 40px;
+			width: 38px;
 			height: 4px;
 			border-radius: 2px;
 			background: var(--line-strong);
-			margin: 8px auto 0;
 		}
 		.details-btn {
 			display: inline-flex;
@@ -572,16 +601,25 @@
 			left: 12px;
 			bottom: calc(12px + env(safe-area-inset-bottom));
 			z-index: 10;
+			background: color-mix(in srgb, var(--surface) 92%, transparent);
+			backdrop-filter: blur(10px);
+			border-color: var(--line);
 			box-shadow: var(--shadow-lift);
 		}
 		.doc-mode .details-btn {
 			display: none;
 		}
 	}
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+	}
 	@media print {
 		.bar,
 		.banner,
 		.panel,
+		.sheet-scrim,
 		.details-btn {
 			display: none !important;
 		}

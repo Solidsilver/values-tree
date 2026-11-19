@@ -49,7 +49,7 @@
 	.children {
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 16px;
 		padding-left: 64px;
 		animation: grow 0.22s var(--ease);
 	}

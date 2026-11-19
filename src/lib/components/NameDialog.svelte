@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { useEditor } from '$lib/client/editor.svelte.ts';
-	import { PRESENCE_COLORS, saveIdentity } from '$lib/client/presence.ts';
+	import { initials, PRESENCE_COLORS, saveIdentity } from '$lib/client/presence.ts';
 	import Modal from './Modal.svelte';
 
 	const ed = useEditor();
 	const s = ed.s;
 	let name = $state(s.identity.chosen ? s.identity.name : '');
 	let color = $state(s.identity.color);
+	const previewInitials = $derived(initials(name.trim() || 'Guest'));
 
 	function save(e?: Event) {
 		e?.preventDefault();
@@ -25,9 +26,12 @@
 
 <Modal bind:open={ed.nameOpen} title="What should others see?" size="sm">
 	<p>Pick a name so the people working on this tree with you know who is who. It is kept on this device only.</p>
-	<form class="field" onsubmit={save}>
-		<label for="display-name">Your name</label>
-		<input id="display-name" autocomplete="nickname" maxlength="40" placeholder="e.g. Sam" bind:value={name} data-autofocus />
+	<form class="name-row" onsubmit={save}>
+		<span class="preview-av" style:background={color} aria-hidden="true">{previewInitials}</span>
+		<div class="field grow">
+			<label for="display-name">Your name</label>
+			<input id="display-name" autocomplete="nickname" maxlength="40" placeholder="e.g. Sam" bind:value={name} data-autofocus />
+		</div>
 	</form>
 	<fieldset class="colors">
 		<legend class="field-label">Your colour</legend>
@@ -47,6 +51,28 @@
 </Modal>
 
 <style>
+	.name-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 12px;
+	}
+	.grow {
+		flex: 1;
+		min-width: 0;
+	}
+	.preview-av {
+		flex: none;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		color: #fff;
+		font-size: 14px;
+		font-weight: 650;
+		letter-spacing: 0.02em;
+		transition: background-color 0.16s var(--ease);
+	}
 	.colors {
 		border: 0;
 		padding: 0;
@@ -67,6 +93,10 @@
 		border-radius: 50%;
 		background: var(--c);
 		cursor: pointer;
+		transition: transform 0.14s var(--ease);
+	}
+	.sw:hover {
+		transform: scale(1.08);
 	}
 	.sw input {
 		position: absolute;
